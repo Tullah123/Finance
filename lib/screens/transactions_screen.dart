@@ -1,0 +1,808 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/transaction.dart';
+import '../services/data_service.dart';
+import '../utils/constants.dart';
+import 'add_transaction_screen.dart';
+
+class TransactionsScreen extends StatefulWidget {
+  final List<Transaction> transactions;
+  final VoidCallback onRefresh;
+  final DataService dataService;
+
+  const TransactionsScreen({
+    Key? key,
+    required this.transactions,
+    required this.onRefresh,
+    required this.dataService,
+  }) : super(key: key);
+
+  @override
+  State<TransactionsScreen> createState() => _TransactionsScreenState();
+}
+
+class _TransactionsScreenState extends State<TransactionsScreen>
+    with SingleTickerProviderStateMixin {
+  String _filterType = 'all';
+  String _sortBy = 'date';
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  List<Transaction> get _filteredTransactions {
+    var filtered = widget.transactions;
+
+    if (_filterType != 'all') {
+      filtered = filtered.where((t) => t.type == _filterType).toList();
+    }
+
+    filtered.sort((a, b) {
+      if (_sortBy == 'date') {
+        return b.date.compareTo(a.date);
+      } else if (_sortBy == 'amount') {
+        return b.amount.compareTo(a.amount);
+      }
+      return 0;
+    });
+
+    return filtered;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final todayTransactions = _filteredTransactions.where((t) {
+      return t.date.year == now.year &&
+          t.date.month == now.month &&
+          t.date.day == now.day;
+    }).toList();
+
+    final yesterdayTransactions = _filteredTransactions.where((t) {
+      final yesterday = now.subtract(Duration(days: 1));
+      return t.date.year == yesterday.year &&
+          t.date.month == yesterday.month &&
+          t.date.day == yesterday.day;
+    }).toList();
+
+    final olderTransactions = _filteredTransactions.where((t) {
+      final yesterday = now.subtract(Duration(days: 1));
+      return t.date
+          .isBefore(DateTime(yesterday.year, yesterday.month, yesterday.day));
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Transactions',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: _showSortOptions,
+                            icon: Icon(Icons.sort_rounded),
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFFF5F7FA),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _showFilterOptions,
+                            icon: Icon(Icons.filter_list_rounded),
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFFF5F7FA),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  // Tab Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F7FA),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF6C63FF),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      //
+                      //
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      //
+                      //
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                      onTap: (index) {
+                        setState(() {
+                          if (index == 0) _filterType = 'all';
+                          if (index == 1) _filterType = 'income';
+                          if (index == 2) _filterType = 'expense';
+                        });
+                      },
+                      tabs: [
+                        Tab(text: 'All'),
+                        Tab(text: 'Income'),
+                        Tab(text: 'Expense'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Transaction List
+            Expanded(
+              child: _filteredTransactions.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(30),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6C63FF).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.receipt_long_rounded,
+                              size: 80,
+                              color: const Color(0xFF6C63FF),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'No transactions yet',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Tap the + button to add\nyour first transaction',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        if (todayTransactions.isNotEmpty) ...[
+                          _buildSectionHeader('Today'),
+                          ...todayTransactions
+                              .map((t) => _buildTransactionCard(t)),
+                          const SizedBox(height: 15),
+                        ],
+                        if (yesterdayTransactions.isNotEmpty) ...[
+                          _buildSectionHeader('Yesterday'),
+                          ...yesterdayTransactions
+                              .map((t) => _buildTransactionCard(t)),
+                          const SizedBox(height: 15),
+                        ],
+                        if (olderTransactions.isNotEmpty) ...[
+                          _buildSectionHeader('Older'),
+                          ...olderTransactions
+                              .map((t) => _buildTransactionCard(t)),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF6C63FF),
+              const Color(0xFF5A52D5),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6C63FF).withOpacity(0.3),
+              blurRadius: 15,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _addTransaction(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: Icon(Icons.add_rounded, size: 28),
+          label: Text(
+            'Add Transaction',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 5),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(Transaction transaction) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showTransactionDetails(transaction),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppConstants.getCategoryColor(transaction.category)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    AppConstants.getCategoryIcon(transaction.category),
+                    color: AppConstants.getCategoryColor(transaction.category),
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transaction.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${transaction.category} • ${DateFormat('hh:mm a').format(transaction.date)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${transaction.type == 'income' ? '+' : '-'} PKR ${transaction.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: transaction.type == 'income'
+                            ? Colors.green
+                            : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sort By',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildSortOption('Date', 'date', Icons.calendar_today_rounded),
+            _buildSortOption('Amount', 'amount', Icons.attach_money_rounded),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortOption(String title, String value, IconData icon) {
+    final isSelected = _sortBy == value;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFF6C63FF).withOpacity(0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[300]!,
+        ),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? const Color(0xFF6C63FF) : Colors.black87,
+          ),
+        ),
+        trailing: isSelected
+            ? Icon(Icons.check_circle, color: const Color(0xFF6C63FF))
+            : null,
+        onTap: () {
+          setState(() {
+            _sortBy = value;
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _showFilterOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Filter By Type',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildFilterOption(
+                'All Transactions', 'all', Icons.all_inclusive_rounded),
+            _buildFilterOption(
+                'Income Only', 'income', Icons.arrow_downward_rounded),
+            _buildFilterOption(
+                'Expenses Only', 'expense', Icons.arrow_upward_rounded),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOption(String title, String value, IconData icon) {
+    final isSelected = _filterType == value;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFF6C63FF).withOpacity(0.1)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[300]!,
+        ),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? const Color(0xFF6C63FF) : Colors.black87,
+          ),
+        ),
+        trailing: isSelected
+            ? Icon(Icons.check_circle, color: const Color(0xFF6C63FF))
+            : null,
+        onTap: () {
+          setState(() {
+            _filterType = value;
+            // Update tab controller
+            if (value == 'all') _tabController.index = 0;
+            if (value == 'income') _tabController.index = 1;
+            if (value == 'expense') _tabController.index = 2;
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  void _showTransactionDetails(Transaction transaction) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppConstants.getCategoryColor(
+                                    transaction.category)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(
+                            AppConstants.getCategoryIcon(transaction.category),
+                            color: AppConstants.getCategoryColor(
+                                transaction.category),
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                transaction.title,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                transaction.category,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Amount
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            'Amount',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${transaction.type == 'income' ? '+' : '-'} PKR ${transaction.amount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: transaction.type == 'income'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Details
+                    _buildDetailItem(
+                      'Type',
+                      transaction.type == 'income' ? 'Income' : 'Expense',
+                      Icons.swap_vert_rounded,
+                    ),
+                    _buildDetailItem(
+                      'Date',
+                      DateFormat('MMMM dd, yyyy - hh:mm a')
+                          .format(transaction.date),
+                      Icons.calendar_today_rounded,
+                    ),
+                    if (transaction.notes != null &&
+                        transaction.notes!.isNotEmpty)
+                      _buildDetailItem(
+                        'Notes',
+                        transaction.notes!,
+                        Icons.note_rounded,
+                      ),
+                    const SizedBox(height: 30),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _deleteTransaction(transaction);
+                            },
+                            icon: Icon(Icons.delete_outline_rounded),
+                            label: Text('Delete'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              side: BorderSide(color: Colors.red),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _editTransaction(context, transaction);
+                            },
+                            icon: Icon(Icons.edit_rounded),
+                            label: Text('Edit'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6C63FF),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 20, color: const Color(0xFF6C63FF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addTransaction(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTransactionScreen(
+          onSave: (transaction) async {
+            widget.transactions.add(transaction);
+            await widget.dataService.saveTransactions(widget.transactions);
+            widget.onRefresh();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _editTransaction(BuildContext context, Transaction transaction) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTransactionScreen(
+          transaction: transaction,
+          onSave: (updatedTransaction) async {
+            final index =
+                widget.transactions.indexWhere((t) => t.id == transaction.id);
+            if (index != -1) {
+              widget.transactions[index] = updatedTransaction;
+              await widget.dataService.saveTransactions(widget.transactions);
+              widget.onRefresh();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  void _deleteTransaction(Transaction transaction) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text('Delete Transaction'),
+        content: Text(
+            'Are you sure you want to delete this transaction? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              widget.transactions.removeWhere((t) => t.id == transaction.id);
+              await widget.dataService.saveTransactions(widget.transactions);
+              widget.onRefresh();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Transaction deleted successfully'),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
