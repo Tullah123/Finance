@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/goal.dart';
 import '../services/data_service.dart';
 import 'add_goal_screen.dart';
+import '../utils/layout.dart';
 
 class GoalsScreen extends StatefulWidget {
   final List<Goal> goals;
@@ -23,18 +24,29 @@ class GoalsScreen extends StatefulWidget {
 class _GoalsScreenState extends State<GoalsScreen> {
   @override
   Widget build(BuildContext context) {
+    final hPad = AppLayout.horizontalPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
+    final itemGap = AppLayout.itemGap(context);
+    final maxWidth = AppLayout.maxContentWidth(context);
+
     final activeGoals = widget.goals.where((g) => g.progress < 100).toList();
     final completedGoals =
         widget.goals.where((g) => g.progress >= 100).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.symmetric(
+                horizontal: hPad,
+                vertical: sectionGap,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
@@ -57,14 +69,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: itemGap / 2),
                   Text(
-                    '${activeGoals.length} active • ${completedGoals.length} completed',
+                    '${activeGoals.length} active â€¢ ${completedGoals.length} completed',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -80,16 +96,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           Container(
                             padding: const EdgeInsets.all(30),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6C63FF).withOpacity(0.1),
+                              color: const Color(0xFF1B998B).withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.flag_rounded,
                               size: 80,
-                              color: const Color(0xFF6C63FF),
+                              color: const Color(0xFF1B998B),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: sectionGap),
                           Text(
                             'No goals yet',
                             style: TextStyle(
@@ -98,7 +114,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: itemGap),
                           Text(
                             'Set your financial goals\nand start saving today!',
                             textAlign: TextAlign.center,
@@ -111,7 +127,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       ),
                     )
                   : ListView(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: hPad,
+                        vertical: sectionGap,
+                      ),
                       children: [
                         if (activeGoals.isNotEmpty) ...[
                           Text(
@@ -122,10 +141,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: itemGap),
                           ...activeGoals
                               .map((goal) => _buildGoalCard(goal, false)),
-                          const SizedBox(height: 20),
+                          SizedBox(height: sectionGap),
                         ],
                         if (completedGoals.isNotEmpty) ...[
                           Text(
@@ -136,28 +155,30 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: itemGap),
                           ...completedGoals
                               .map((goal) => _buildGoalCard(goal, true)),
                         ],
                       ],
                     ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF6C63FF),
-              const Color(0xFF5A52D5),
+              const Color(0xFF1B998B),
+              const Color(0xFF14786C),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6C63FF).withOpacity(0.3),
+              color: const Color(0xFF1B998B).withOpacity(0.3),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -183,6 +204,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   Widget _buildGoalCard(Goal goal, bool isCompleted) {
     final daysLeft = goal.deadline.difference(DateTime.now()).inDays;
     final isOverdue = daysLeft < 0 && !isCompleted;
+    final itemGap = AppLayout.itemGap(context);
 
     Color progressColor;
     if (isCompleted) {
@@ -190,7 +212,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     } else if (isOverdue) {
       progressColor = Colors.red;
     } else if (goal.progress >= 75) {
-      progressColor = const Color(0xFF6C63FF);
+      progressColor = const Color(0xFF1B998B);
     } else if (goal.progress >= 50) {
       progressColor = Colors.orange;
     } else {
@@ -198,7 +220,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
@@ -237,18 +259,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            goal.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              goal.title,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
                           if (goal.description != null) ...[
                             const SizedBox(height: 4),
                             Text(
@@ -281,47 +305,55 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 const SizedBox(height: 16),
 
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Current',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Current',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
-                        Text(
-                          'PKR ${goal.currentAmount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                          Text(
+                            'PKR ${goal.currentAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Target',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                    SizedBox(width: itemGap),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Target',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
-                        Text(
-                          'PKR ${goal.targetAmount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: progressColor,
+                          Text(
+                            'PKR ${goal.targetAmount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: progressColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -336,10 +368,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         fontWeight: FontWeight.w600,
                         color: progressColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       isCompleted
-                          ? '✓ Completed'
+                          ? 'Completed'
                           : isOverdue
                               ? 'Overdue'
                               : '$daysLeft days left',
@@ -352,6 +386,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                 : Colors.grey[600],
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -396,12 +432,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF).withOpacity(0.1),
+                            color: const Color(0xFF1B998B).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
                             Icons.flag_rounded,
-                            color: const Color(0xFF6C63FF),
+                            color: const Color(0xFF1B998B),
                             size: 32,
                           ),
                         ),
@@ -416,6 +452,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               if (goal.description != null)
                                 Text(
@@ -424,6 +462,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                     fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                             ],
                           ),
@@ -435,7 +475,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       'Target Amount',
                       'PKR ${goal.targetAmount.toStringAsFixed(2)}',
                       Icons.account_balance_wallet_rounded,
-                      const Color(0xFF6C63FF),
+                      const Color(0xFF1B998B),
                     ),
                     _buildDetailItem(
                       'Current Savings',
@@ -453,7 +493,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       'Progress',
                       '${goal.progress.toStringAsFixed(1)}%',
                       Icons.pie_chart_rounded,
-                      const Color(0xFF6C63FF),
+                      const Color(0xFF1B998B),
                     ),
                     _buildDetailItem(
                       'Deadline',
@@ -492,7 +532,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                             icon: Icon(Icons.add_rounded),
                             label: Text('Add Money'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: const Color(0xFF1B998B),
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -520,7 +560,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: const Color(0xFFF4F7F8),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -553,6 +593,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -627,7 +669,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: const Color(0xFF1B998B),
               foregroundColor: Colors.white,
               elevation: 0,
             ),
@@ -681,3 +723,5 @@ class _GoalsScreenState extends State<GoalsScreen> {
     );
   }
 }
+
+

@@ -1,13 +1,15 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaction.dart';
 import '../models/budget.dart';
 import '../models/goal.dart';
+import '../models/reminder.dart';
 
 class DataService {
   static const String _transactionsKey = 'transactions';
   static const String _budgetsKey = 'budgets';
   static const String _goalsKey = 'goals';
+  static const String _remindersKey = 'reminders';
 
   Future<void> saveTransactions(List<Transaction> transactions) async {
     final prefs = await SharedPreferences.getInstance();
@@ -50,4 +52,20 @@ class DataService {
     final jsonList = json.decode(jsonString) as List;
     return jsonList.map((j) => Goal.fromJson(j)).toList();
   }
+
+  Future<void> saveReminders(List<Reminder> reminders) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = reminders.map((r) => r.toJson()).toList();
+    await prefs.setString(_remindersKey, json.encode(jsonList));
+  }
+
+  Future<List<Reminder>> loadReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_remindersKey);
+    if (jsonString == null) return [];
+    final jsonList = json.decode(jsonString) as List;
+    return jsonList.map((j) => Reminder.fromJson(j)).toList();
+  }
 }
+
+

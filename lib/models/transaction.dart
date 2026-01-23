@@ -1,4 +1,4 @@
-class Transaction {
+﻿class Transaction {
   String id;
   String title;
   double amount;
@@ -6,9 +6,15 @@ class Transaction {
   String type;
   DateTime date;
   String? notes;
-  //
-  //
-  //String? receiptImagePath;
+  String? merchant;
+  String? currency;
+  double? tax;
+  String? paymentMethod;
+  String? receiptImagePath;
+  String? receiptFilePath;
+  String? receiptSource;
+  String? rawText;
+  String? classificationReason;
 
   Transaction({
     required this.id,
@@ -18,9 +24,15 @@ class Transaction {
     required this.type,
     required this.date,
     this.notes,
-    //
-    //
-    // this.receiptImagePath,
+    this.merchant,
+    this.currency,
+    this.tax,
+    this.paymentMethod,
+    this.receiptImagePath,
+    this.receiptFilePath,
+    this.receiptSource,
+    this.rawText,
+    this.classificationReason,
   });
 
   Map<String, dynamic> toJson() => {
@@ -31,7 +43,15 @@ class Transaction {
         'type': type,
         'date': date.toIso8601String(),
         'notes': notes,
-        //'receiptImagePath': receiptImagePath,
+        'merchant': merchant,
+        'currency': currency,
+        'tax': tax,
+        'paymentMethod': paymentMethod,
+        'receiptImagePath': receiptImagePath,
+        'receiptFilePath': receiptFilePath,
+        'receiptSource': receiptSource,
+        'rawText': rawText,
+        'classificationReason': classificationReason,
       };
 
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -41,6 +61,16 @@ class Transaction {
       category: json['category'],
       type: json['type'],
       date: DateTime.parse(json['date']),
-      notes: json['notes']);
-  //receiptImagePath: json['receiptImagePath']);
+      notes: json['notes'],
+      merchant: json['merchant'],
+      currency: json['currency'],
+      tax: json['tax'] == null ? null : (json['tax'] as num).toDouble(),
+      paymentMethod: json['paymentMethod'],
+      receiptImagePath: json['receiptImagePath'],
+      receiptFilePath: json['receiptFilePath'],
+      receiptSource: json['receiptSource'],
+      rawText: json['rawText'],
+      classificationReason: json['classificationReason']);
 }
+
+

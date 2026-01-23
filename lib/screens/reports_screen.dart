@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction.dart';
 import '../utils/constants.dart';
+import '../utils/layout.dart';
 
 class ReportsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -34,6 +35,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hPad = AppLayout.horizontalPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
+    final itemGap = AppLayout.itemGap(context);
+    final maxWidth = AppLayout.maxContentWidth(context);
+
     final income = _filteredTransactions
         .where((t) => t.type == 'income')
         .fold(0.0, (sum, t) => sum + t.amount);
@@ -53,13 +59,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.symmetric(
+                horizontal: hPad,
+                vertical: sectionGap,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
@@ -82,8 +94,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: sectionGap),
 
                   // Period Selector
                   Row(
@@ -91,13 +105,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       Expanded(
                         child: _buildPeriodButton('Month', 'month'),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: itemGap),
                       Expanded(
                         child: _buildPeriodButton('Year', 'year'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: itemGap),
 
                   // Date Navigator
                   Container(
@@ -106,14 +120,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFF6C63FF),
-                          const Color(0xFF5A52D5),
+                          const Color(0xFF1B998B),
+                          const Color(0xFF14786C),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
                           icon: Icon(Icons.chevron_left_rounded,
@@ -132,14 +145,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             });
                           },
                         ),
-                        Text(
-                          _selectedPeriod == 'month'
-                              ? DateFormat('MMMM yyyy').format(_selectedDate)
-                              : DateFormat('yyyy').format(_selectedDate),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              _selectedPeriod == 'month'
+                                  ? DateFormat('MMMM yyyy')
+                                      .format(_selectedDate)
+                                  : DateFormat('yyyy').format(_selectedDate),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                         IconButton(
@@ -169,7 +189,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             // Content
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPad,
+                  vertical: sectionGap,
+                ),
                 children: [
                   // Summary Cards
                   Row(
@@ -182,7 +205,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           Icons.arrow_downward_rounded,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: itemGap),
                       Expanded(
                         child: _buildSummaryCard(
                           'Expense',
@@ -193,16 +216,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: itemGap),
                   _buildSummaryCard(
                     'Net Balance',
                     balance,
-                    balance >= 0 ? const Color(0xFF6C63FF) : Colors.orange,
+                    balance >= 0 ? const Color(0xFF1B998B) : Colors.orange,
                     balance >= 0
                         ? Icons.trending_up_rounded
                         : Icons.trending_down_rounded,
                   ),
-                  const SizedBox(height: 25),
+                  SizedBox(height: sectionGap + 5),
 
                   // Pie Chart
                   if (categoryData.isNotEmpty) ...[
@@ -248,7 +271,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 25),
+                    SizedBox(height: sectionGap + 5),
                   ],
 
                   // Statistics
@@ -281,7 +304,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           Icons.receipt_long_rounded,
                           'Total Transactions',
                           _filteredTransactions.length.toString(),
-                          const Color(0xFF6C63FF),
+                          const Color(0xFF1B998B),
                         ),
                         _buildStatRow(
                           Icons.shopping_cart_rounded,
@@ -318,7 +341,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             categoryData.entries
                                 .reduce((a, b) => a.value > b.value ? a : b)
                                 .key,
-                            const Color(0xFF6C63FF),
+                            const Color(0xFF1B998B),
                           ),
                       ],
                     ),
@@ -326,7 +349,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ],
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -344,7 +369,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         duration: Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFFF5F7FA),
+          color: isSelected ? const Color(0xFF1B998B) : const Color(0xFFF4F7F8),
           borderRadius: BorderRadius.circular(15),
         ),
         child: Center(
@@ -398,14 +423,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
               fontSize: 14,
               color: Colors.grey[600],
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 5),
-          Text(
-            'PKR ${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'PKR ${amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -446,7 +477,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F7FA),
+          color: const Color(0xFFF4F7F8),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -476,6 +507,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -484,6 +517,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -495,6 +530,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 fontSize: 14,
                 color: AppConstants.getCategoryColor(entry.key),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -507,7 +544,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: const Color(0xFFF4F7F8),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -537,9 +574,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               fontSize: 14,
               color: Colors.black87,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 }
+
+

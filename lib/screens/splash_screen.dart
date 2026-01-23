@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -62,8 +62,8 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF6C63FF),
-              const Color(0xFF5A52D5),
+              const Color(0xFF1B998B),
+              const Color(0xFF14786C),
               const Color(0xFF4B42BA),
             ],
           ),
@@ -121,3 +121,5 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
+
+

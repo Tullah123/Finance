@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class AppConstants {
   static const List<String> expenseCategories = [
@@ -92,3 +92,5 @@ class AppConstants {
     }
   }
 }
+
+

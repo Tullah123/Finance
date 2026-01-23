@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/budget.dart';
 import '../models/transaction.dart';
 import '../services/data_service.dart';
 import '../utils/constants.dart';
+import '../utils/layout.dart';
 import 'add_budget_screen.dart';
 
 class BudgetsScreen extends StatefulWidget {
@@ -73,14 +74,25 @@ class _BudgetsScreenState extends State<BudgetsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final hPad = AppLayout.horizontalPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
+    final itemGap = AppLayout.itemGap(context);
+    final maxWidth = AppLayout.maxContentWidth(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.symmetric(
+                horizontal: hPad,
+                vertical: sectionGap,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
@@ -99,24 +111,27 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Budgets',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                      Expanded(
+                        child: Text(
+                          'Budgets',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
                         onPressed: _selectMonth,
                         icon: Icon(Icons.calendar_month_rounded),
                         style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFFF5F7FA),
+                          backgroundColor: const Color(0xFFF4F7F8),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: itemGap),
 
                   // Month Selector
                   Container(
@@ -125,14 +140,13 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFF6C63FF),
-                          const Color(0xFF5A52D5),
+                          const Color(0xFF1B998B),
+                          const Color(0xFF14786C),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
                           icon: Icon(Icons.chevron_left_rounded,
@@ -146,12 +160,18 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                             });
                           },
                         ),
-                        Text(
-                          DateFormat('MMMM yyyy').format(_selectedMonth),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              DateFormat('MMMM yyyy').format(_selectedMonth),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
                         IconButton(
@@ -172,11 +192,11 @@ class _BudgetsScreenState extends State<BudgetsScreen>
 
                   // Total Budget Overview
                   if (_currentMonthBudgets.isNotEmpty) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(height: sectionGap),
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(itemGap + 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FA),
+                        color: const Color(0xFFF4F7F8),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -240,7 +260,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 _totalSpent > _totalBudget
                                     ? Colors.red
-                                    : const Color(0xFF6C63FF),
+                                    : const Color(0xFF1B998B),
                               ),
                             ),
                           ),
@@ -262,16 +282,16 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                           Container(
                             padding: const EdgeInsets.all(30),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF6C63FF).withOpacity(0.1),
+                              color: const Color(0xFF1B998B).withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.pie_chart_rounded,
                               size: 80,
-                              color: const Color(0xFF6C63FF),
+                              color: const Color(0xFF1B998B),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: sectionGap),
                           Text(
                             'No budgets for this month',
                             style: TextStyle(
@@ -280,7 +300,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          SizedBox(height: itemGap),
                           Text(
                             'Create a budget to track\nyour spending limits',
                             textAlign: TextAlign.center,
@@ -293,7 +313,10 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: hPad,
+                        vertical: sectionGap,
+                      ),
                       itemCount: _currentMonthBudgets.length,
                       itemBuilder: (context, index) {
                         final budget = _currentMonthBudgets[index];
@@ -301,21 +324,23 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                       },
                     ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF6C63FF),
-              const Color(0xFF5A52D5),
+              const Color(0xFF1B998B),
+              const Color(0xFF14786C),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6C63FF).withOpacity(0.3),
+              color: const Color(0xFF1B998B).withOpacity(0.3),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -342,6 +367,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     final spent = _getSpentAmount(budget.category);
     final percentage = (spent / budget.limit) * 100;
     final remaining = budget.limit - spent;
+    final itemGap = AppLayout.itemGap(context);
 
     Color progressColor;
     Color backgroundColor;
@@ -374,7 +400,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: EdgeInsets.only(bottom: itemGap),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(25),
@@ -411,7 +437,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                           size: 28,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: itemGap + 4),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,6 +449,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -431,6 +459,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                                 fontSize: 13,
                                 color: Colors.grey[600],
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -520,6 +550,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
               fontSize: 12,
               color: Colors.grey[600],
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
@@ -530,6 +562,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
               color: color,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -613,7 +647,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                       'Budget Limit',
                       'PKR ${budget.limit.toStringAsFixed(2)}',
                       Icons.account_balance_wallet_rounded,
-                      const Color(0xFF6C63FF),
+                      const Color(0xFF1B998B),
                     ),
                     _buildDetailItem(
                       'Amount Spent',
@@ -631,7 +665,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                       'Progress',
                       '${percentage.toStringAsFixed(1)}%',
                       Icons.pie_chart_rounded,
-                      percentage >= 80 ? Colors.red : const Color(0xFF6C63FF),
+                      percentage >= 80 ? Colors.red : const Color(0xFF1B998B),
                     ),
                     const SizedBox(height: 30),
                     Row(
@@ -664,7 +698,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                             icon: Icon(Icons.edit_rounded),
                             label: Text('Edit'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: const Color(0xFF1B998B),
                               foregroundColor: Colors.white,
                               padding: EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -692,7 +726,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: const Color(0xFFF4F7F8),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -725,6 +759,8 @@ class _BudgetsScreenState extends State<BudgetsScreen>
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -744,7 +780,7 @@ class _BudgetsScreenState extends State<BudgetsScreen>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: const Color(0xFF6C63FF),
+              primary: const Color(0xFF1B998B),
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black87,
@@ -840,3 +876,5 @@ class _BudgetsScreenState extends State<BudgetsScreen>
     );
   }
 }
+
+

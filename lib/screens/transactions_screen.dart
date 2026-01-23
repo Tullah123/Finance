@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../services/data_service.dart';
 import '../utils/constants.dart';
+import '../utils/layout.dart';
 import 'add_transaction_screen.dart';
+import 'receipt_scanner_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -60,6 +62,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final hPad = AppLayout.horizontalPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
+    final itemGap = AppLayout.itemGap(context);
+    final cardPad = AppLayout.cardPadding(context);
+    final maxWidth = AppLayout.maxContentWidth(context);
+
     final now = DateTime.now();
     final todayTransactions = _filteredTransactions.where((t) {
       return t.date.year == now.year &&
@@ -81,166 +91,166 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: hPad,
+                    vertical: sectionGap,
+                  ),
+                  color: colorScheme.surface,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Transactions',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
                       Row(
                         children: [
-                          IconButton(
-                            onPressed: _showSortOptions,
-                            icon: Icon(Icons.sort_rounded),
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFFF5F7FA),
+                          Expanded(
+                            child: Text(
+                              'Transactions',
+                              style: textTheme.titleLarge,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: _showFilterOptions,
-                            icon: Icon(Icons.filter_list_rounded),
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFFF5F7FA),
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: _showSortOptions,
+                                icon: Icon(Icons.sort_rounded),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: colorScheme.background,
+                                ),
+                              ),
+                              SizedBox(width: itemGap),
+                              IconButton(
+                                onPressed: _showFilterOptions,
+                                icon: Icon(Icons.filter_list_rounded),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: colorScheme.background,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
+                      ),
+                      SizedBox(height: itemGap),
+                      // Tab Bar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.background,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: TabBar(
+                          controller: _tabController,
+                          indicator: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          labelColor: Colors.white,
+                          unselectedLabelColor: Colors.grey,
+                          labelStyle: TextStyle(fontWeight: FontWeight.bold),
+                          onTap: (index) {
+                            setState(() {
+                              if (index == 0) _filterType = 'all';
+                              if (index == 1) _filterType = 'income';
+                              if (index == 2) _filterType = 'expense';
+                            });
+                          },
+                          tabs: [
+                            Tab(text: 'All'),
+                            Tab(text: 'Income'),
+                            Tab(text: 'Expense'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 15),
-                  // Tab Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F7FA),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: const Color(0xFF6C63FF),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      //
-                      //
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      //
-                      //
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.grey,
-                      labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                      onTap: (index) {
-                        setState(() {
-                          if (index == 0) _filterType = 'all';
-                          if (index == 1) _filterType = 'income';
-                          if (index == 2) _filterType = 'expense';
-                        });
-                      },
-                      tabs: [
-                        Tab(text: 'All'),
-                        Tab(text: 'Income'),
-                        Tab(text: 'Expense'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            // Transaction List
-            Expanded(
-              child: _filteredTransactions.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(30),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6C63FF).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.receipt_long_rounded,
-                              size: 80,
-                              color: const Color(0xFF6C63FF),
-                            ),
+                // Transaction List
+                Expanded(
+                  child: _filteredTransactions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(cardPad + 6),
+                                decoration: BoxDecoration(
+                                  color:
+                                      colorScheme.primary.withOpacity(0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.receipt_long_rounded,
+                                  size: 72,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              SizedBox(height: sectionGap),
+                              Text(
+                                'No transactions yet',
+                                style: textTheme.titleLarge,
+                              ),
+                              SizedBox(height: itemGap),
+                              Text(
+                                'Tap the + button to add\nyour first transaction',
+                                textAlign: TextAlign.center,
+                                style: textTheme.bodyMedium,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'No transactions yet',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                        )
+                      : ListView(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: hPad,
+                            vertical: sectionGap,
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Tap the + button to add\nyour first transaction',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.all(20),
-                      children: [
-                        if (todayTransactions.isNotEmpty) ...[
-                          _buildSectionHeader('Today'),
-                          ...todayTransactions
-                              .map((t) => _buildTransactionCard(t)),
-                          const SizedBox(height: 15),
-                        ],
-                        if (yesterdayTransactions.isNotEmpty) ...[
-                          _buildSectionHeader('Yesterday'),
-                          ...yesterdayTransactions
-                              .map((t) => _buildTransactionCard(t)),
-                          const SizedBox(height: 15),
-                        ],
-                        if (olderTransactions.isNotEmpty) ...[
-                          _buildSectionHeader('Older'),
-                          ...olderTransactions
-                              .map((t) => _buildTransactionCard(t)),
-                        ],
-                      ],
-                    ),
+                          children: [
+                            if (todayTransactions.isNotEmpty) ...[
+                              _buildSectionHeader('Today'),
+                              ...todayTransactions
+                                  .map((t) => _buildTransactionCard(t)),
+                              SizedBox(height: itemGap),
+                            ],
+                            if (yesterdayTransactions.isNotEmpty) ...[
+                              _buildSectionHeader('Yesterday'),
+                              ...yesterdayTransactions
+                                  .map((t) => _buildTransactionCard(t)),
+                              SizedBox(height: itemGap),
+                            ],
+                            if (olderTransactions.isNotEmpty) ...[
+                              _buildSectionHeader('Older'),
+                              ...olderTransactions
+                                  .map((t) => _buildTransactionCard(t)),
+                            ],
+                          ],
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFF6C63FF),
-              const Color(0xFF5A52D5),
+              colorScheme.primary,
+              colorScheme.primary.withOpacity(0.85),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6C63FF).withOpacity(0.3),
+              color: colorScheme.primary.withOpacity(0.25),
               blurRadius: 15,
               offset: Offset(0, 8),
             ),
@@ -264,22 +274,25 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   Widget _buildSectionHeader(String title) {
+    final textTheme = Theme.of(context).textTheme;
+    final itemGap = AppLayout.itemGap(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 5),
+      padding: EdgeInsets.only(bottom: itemGap, top: itemGap / 2),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+        style: textTheme.titleMedium?.copyWith(
           color: Colors.grey[600],
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
   Widget _buildTransactionCard(Transaction transaction) {
+    final itemGap = AppLayout.itemGap(context);
+    final cardPad = AppLayout.cardPadding(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -297,11 +310,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           borderRadius: BorderRadius.circular(20),
           onTap: () => _showTransactionDetails(transaction),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(cardPad - 2),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(cardPad - 4),
                   decoration: BoxDecoration(
                     color: AppConstants.getCategoryColor(transaction.category)
                         .withOpacity(0.1),
@@ -313,7 +326,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     size: 26,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: itemGap + 4),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,14 +338,18 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${transaction.category} • ${DateFormat('hh:mm a').format(transaction.date)}',
+                        '${transaction.category} â€¢ ${DateFormat('hh:mm a').format(transaction.date)}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[500],
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -349,6 +366,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             ? Colors.green
                             : Colors.red,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -361,11 +380,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _showSortOptions() {
+    final cardPad = AppLayout.cardPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(cardPad),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -381,10 +402,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: sectionGap),
             _buildSortOption('Date', 'date', Icons.calendar_today_rounded),
             _buildSortOption('Amount', 'amount', Icons.attach_money_rounded),
-            const SizedBox(height: 10),
+            SizedBox(height: sectionGap / 2),
           ],
         ),
       ),
@@ -393,32 +414,31 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   Widget _buildSortOption(String title, String value, IconData icon) {
     final isSelected = _sortBy == value;
+    final primary = Theme.of(context).colorScheme.primary;
+    final itemGap = AppLayout.itemGap(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
-        color: isSelected
-            ? const Color(0xFF6C63FF).withOpacity(0.1)
-            : Colors.transparent,
+        color: isSelected ? primary.withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[300]!,
+          color: isSelected ? primary : Colors.grey[300]!,
         ),
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey,
+          color: isSelected ? primary : Colors.grey,
         ),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? const Color(0xFF6C63FF) : Colors.black87,
+            color: isSelected ? primary : Colors.black87,
           ),
         ),
-        trailing: isSelected
-            ? Icon(Icons.check_circle, color: const Color(0xFF6C63FF))
-            : null,
+        trailing:
+            isSelected ? Icon(Icons.check_circle, color: primary) : null,
         onTap: () {
           setState(() {
             _sortBy = value;
@@ -430,11 +450,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _showFilterOptions() {
+    final cardPad = AppLayout.cardPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(cardPad),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -450,14 +472,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: sectionGap),
             _buildFilterOption(
                 'All Transactions', 'all', Icons.all_inclusive_rounded),
             _buildFilterOption(
                 'Income Only', 'income', Icons.arrow_downward_rounded),
             _buildFilterOption(
                 'Expenses Only', 'expense', Icons.arrow_upward_rounded),
-            const SizedBox(height: 10),
+            SizedBox(height: sectionGap / 2),
           ],
         ),
       ),
@@ -466,32 +488,31 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   Widget _buildFilterOption(String title, String value, IconData icon) {
     final isSelected = _filterType == value;
+    final primary = Theme.of(context).colorScheme.primary;
+    final itemGap = AppLayout.itemGap(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
-        color: isSelected
-            ? const Color(0xFF6C63FF).withOpacity(0.1)
-            : Colors.transparent,
+        color: isSelected ? primary.withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[300]!,
+          color: isSelected ? primary : Colors.grey[300]!,
         ),
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey,
+          color: isSelected ? primary : Colors.grey,
         ),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? const Color(0xFF6C63FF) : Colors.black87,
+            color: isSelected ? primary : Colors.black87,
           ),
         ),
-        trailing: isSelected
-            ? Icon(Icons.check_circle, color: const Color(0xFF6C63FF))
-            : null,
+        trailing:
+            isSelected ? Icon(Icons.check_circle, color: primary) : null,
         onTap: () {
           setState(() {
             _filterType = value;
@@ -507,6 +528,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _showTransactionDetails(Transaction transaction) {
+    final cardPad = AppLayout.cardPadding(context);
+    final sectionGap = AppLayout.sectionGap(context);
+    final itemGap = AppLayout.itemGap(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -531,7 +555,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(cardPad + 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -577,7 +601,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: sectionGap + 6),
 
                     // Amount
                     Center(
@@ -590,7 +614,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               color: Colors.grey[600],
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: itemGap / 2),
                           Text(
                             '${transaction.type == 'income' ? '+' : '-'} PKR ${transaction.amount.toStringAsFixed(2)}',
                             style: TextStyle(
@@ -604,7 +628,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: sectionGap + 6),
 
                     // Details
                     _buildDetailItem(
@@ -625,7 +649,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         transaction.notes!,
                         Icons.note_rounded,
                       ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: sectionGap + 6),
 
                     // Action Buttons
                     Row(
@@ -641,14 +665,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.red,
                               side: BorderSide(color: Colors.red),
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: itemGap),
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
@@ -658,9 +682,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             icon: Icon(Icons.edit_rounded),
                             label: Text('Edit'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
                               foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
@@ -685,7 +710,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
+        color: const Color(0xFFF4F7F8),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -696,7 +721,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFF6C63FF)),
+            child: Icon(icon, size: 20, color: const Color(0xFF1B998B)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -728,15 +753,69 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _addTransaction(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddTransactionScreen(
-          onSave: (transaction) async {
-            widget.transactions.add(transaction);
-            await widget.dataService.saveTransactions(widget.transactions);
-            widget.onRefresh();
-          },
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add Transaction',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.edit_rounded, color: const Color(0xFF1B998B)),
+              title: Text('Manual Entry'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddTransactionScreen(
+                      onSave: (transaction) async {
+                        widget.transactions.add(transaction);
+                        await widget.dataService
+                            .saveTransactions(widget.transactions);
+                        widget.onRefresh();
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.receipt_long_rounded,
+                  color: const Color(0xFF1B998B)),
+              title: Text('Scan Receipt'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReceiptScannerScreen(
+                      onSave: (transaction) async {
+                        widget.transactions.add(transaction);
+                        await widget.dataService
+                            .saveTransactions(widget.transactions);
+                        widget.onRefresh();
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -806,3 +885,5 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 }
+
+

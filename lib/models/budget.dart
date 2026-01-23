@@ -1,4 +1,4 @@
-class Budget {
+﻿class Budget {
   String id;
   String category;
   double limit;
@@ -25,3 +25,5 @@ class Budget {
         month: DateTime.parse(json['month']),
       );
 }
+
+

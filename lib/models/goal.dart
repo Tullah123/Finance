@@ -1,4 +1,4 @@
-class Goal {
+﻿class Goal {
   String id;
   String title;
   double targetAmount;
@@ -36,3 +36,5 @@ class Goal {
         description: json['description'],
       );
 }
+
+
