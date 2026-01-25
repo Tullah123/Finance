@@ -137,7 +137,11 @@ class _MainScreenState extends State<MainScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? (isCompact ? 10 : 16) : (isCompact ? 8 : 12),
+          horizontal: isCompact ? 6 : 10,
+          //
+          //
+
+          // horizontal: isSelected ? (isCompact ? 10 : 16) : (isCompact ? 8 : 12),
           vertical: 7,
         ),
         decoration: BoxDecoration(
