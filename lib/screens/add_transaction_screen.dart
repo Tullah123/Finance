@@ -93,10 +93,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     final largeGap = sectionGap + 8;
     final gridColumns = AppLayout.gridCount(
       context,
-      minTileWidth: isCompact ? 96 : 112,
+      minTileWidth: isCompact ? 88 : 100,
       maxCount: 4,
     );
-    final gridAspect = gridColumns >= 4 ? 1.2 : 1.1;
+    final gridAspect = gridColumns >= 4 ? 1.2 : 1.05;
+    final categoryTilePadding = isCompact ? 6.0 : 8.0;
+    final categoryIconSize = isCompact ? 20.0 : 22.0;
+    final categoryFontSize = isCompact ? 9.5 : 10.5;
+    final categoryLabelGap = isCompact ? 3.0 : 4.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -107,24 +111,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
         ),
       ),
       body: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: hPad,
-                      vertical: sectionGap,
-                    ),
-                    children: [
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    hPad,
+                    sectionGap,
+                    hPad,
+                    sectionGap + bottomInset + 24,
+                  ),
+                  children: [
               // Transaction Type Selector
               Container(
                 padding: EdgeInsets.all(cardPad),
@@ -382,7 +384,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           },
                           child: AnimatedContainer(
                             duration: Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(categoryTilePadding),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppConstants.getCategoryColor(category)
@@ -404,14 +406,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                                   color: isSelected
                                       ? AppConstants.getCategoryColor(category)
                                       : Colors.grey[600],
-                                  size: 28,
+                                  size: categoryIconSize,
                                 ),
-                                SizedBox(height: itemGap / 2),
+                                SizedBox(height: categoryLabelGap),
                                 Text(
                                   category,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: isCompact ? 10 : 11,
+                                    fontSize: categoryFontSize,
                                     fontWeight: isSelected
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -420,7 +422,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                                             category)
                                         : Colors.grey[600],
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
@@ -617,8 +619,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                 ),
               ),
               SizedBox(height: sectionGap),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),

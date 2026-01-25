@@ -268,10 +268,16 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
 
   Widget _buildReviewView() {
     final result = _scanResult!;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          20 + bottomInset + 24,
+        ),
         children: [
           if (result.receiptImagePath != null) ...[
             Container(

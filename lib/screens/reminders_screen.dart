@@ -185,6 +185,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 _editReminder(reminder);
               },
             ),
+            //
+            //
+            ListTile(
+              leading: Icon(
+                reminder.isEnabled
+                    ? Icons.notifications_off_rounded
+                    : Icons.notifications_active_rounded,
+              ),
+              title: Text(
+                  reminder.isEnabled ? 'Disable reminder' : 'Enable reminder'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _toggleEnabled(reminder, !reminder.isEnabled);
+              },
+            ),
+//
+//
             ListTile(
               leading: Icon(
                 reminder.isCompleted
@@ -433,6 +450,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
               ),
           ],
         ),
+        //
+        //
+        trailing: _buildStatusChip(statusLabel, statusColor),
+//
+//
+        /*
         trailing: SizedBox(
           width: 86,
           child: Column(
@@ -449,6 +472,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ],
           ),
         ),
+        */
       ),
     );
   }

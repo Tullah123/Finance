@@ -72,22 +72,20 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
         ),
       ),
       body: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: hPad,
-                    vertical: sectionGap,
-                  ),
-                  children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  sectionGap,
+                  hPad,
+                  sectionGap + bottomInset + 24,
+                ),
+                children: [
                     // Title
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -457,8 +455,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),

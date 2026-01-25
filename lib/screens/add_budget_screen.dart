@@ -46,6 +46,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     super.dispose();
   }
 
+  List<String> get _categories => AppConstants.expenseCategories;
+
   @override
   Widget build(BuildContext context) {
     final hPad = AppLayout.horizontalPadding(context);
@@ -53,13 +55,17 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final itemGap = AppLayout.itemGap(context);
     final maxWidth = AppLayout.maxContentWidth(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isCompact = MediaQuery.sizeOf(context).width < 360;
     final gridColumns = AppLayout.gridCount(
       context,
-      minTileWidth: 110,
+      minTileWidth: isCompact ? 92 : 104,
       maxCount: 4,
     );
-    final gridAspect = gridColumns >= 4 ? 1.2 : 1.1;
-    final isCompact = MediaQuery.sizeOf(context).width < 360;
+    final gridAspect = gridColumns >= 4 ? 1.2 : 1.05;
+    final categoryTilePadding = isCompact ? 6.0 : 8.0;
+    final categoryIconSize = isCompact ? 20.0 : 22.0;
+    final categoryFontSize = isCompact ? 9.5 : 10.5;
+    final categoryLabelGap = isCompact ? 3.0 : 4.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -70,22 +76,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         ),
       ),
       body: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: hPad,
-                    vertical: sectionGap,
-                  ),
-                  children: [
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  sectionGap,
+                  hPad,
+                  sectionGap + bottomInset + 24,
+                ),
+                children: [
                     // Category Selection
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -122,10 +126,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                               mainAxisSpacing: itemGap,
                               childAspectRatio: gridAspect,
                             ),
-                            itemCount: AppConstants.expenseCategories.length,
+                            itemCount: _categories.length,
                             itemBuilder: (context, index) {
-                              final category =
-                                  AppConstants.expenseCategories[index];
+                              final category = _categories[index];
                               final isSelected = _category == category;
                               return GestureDetector(
                                 onTap: () {
@@ -135,7 +138,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                 },
                                 child: AnimatedContainer(
                                   duration: Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.all(12),
+                                  padding: EdgeInsets.all(categoryTilePadding),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? AppConstants.getCategoryColor(category)
@@ -159,14 +162,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                             ? AppConstants.getCategoryColor(
                                                 category)
                                             : Colors.grey[600],
-                                        size: 28,
+                                        size: categoryIconSize,
                                       ),
-                                      SizedBox(height: itemGap / 2),
+                                      SizedBox(height: categoryLabelGap),
                                       Text(
                                         category,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: isCompact ? 10 : 11,
+                                          fontSize: categoryFontSize,
                                           fontWeight: isSelected
                                               ? FontWeight.bold
                                               : FontWeight.normal,
@@ -175,7 +178,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                                   category)
                                               : Colors.grey[600],
                                         ),
-                                        maxLines: 2,
+                                        maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
@@ -371,8 +374,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
