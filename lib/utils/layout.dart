@@ -48,5 +48,3 @@ class AppLayout {
     return count.clamp(minCount, maxCount);
   }
 }
-
-

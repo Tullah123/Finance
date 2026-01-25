@@ -150,7 +150,10 @@ class DashboardScreen extends StatelessWidget {
       minTileWidth: 150,
       maxCount: 3,
     );
-    final quickCardAspect = quickGridCount >= 3 ? 1.12 : 1.35;
+    //
+    //
+    //
+    final quickCardAspect = quickGridCount >= 3 ? 1.0 : 1.25;
 
     return Scaffold(
       body: SafeArea(
@@ -158,7 +161,8 @@ class DashboardScreen extends StatelessWidget {
           onRefresh: () async => onRefresh(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: sectionGap),
+            padding:
+                EdgeInsets.symmetric(horizontal: hPad, vertical: sectionGap),
             children: [
               Align(
                 alignment: Alignment.topCenter,
@@ -218,10 +222,15 @@ class DashboardScreen extends StatelessWidget {
                         'This Month (${DateFormat('MMMM').format(now)})',
                         style: textTheme.titleLarge,
                       ),
+                      //
+                      //
+                      //
                       SizedBox(height: itemGap),
-                      Row(
-                        children: [
-                          Expanded(
+
+                      Row(children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 100,
                             child: _buildStatCard(
                               context,
                               label: 'Income',
@@ -230,18 +239,32 @@ class DashboardScreen extends StatelessWidget {
                               color: const Color(0xFF2E8B57),
                             ),
                           ),
-                          SizedBox(width: itemGap),
+                        ),
+
+                        //
+                        //
+                      ]),
+                      SizedBox(height: itemGap),
+                      Row(
+                        children: [
                           Expanded(
-                            child: _buildStatCard(
-                              context,
-                              label: 'Expense',
-                              value: currency.format(monthExpense),
-                              icon: Icons.arrow_upward_rounded,
-                              color: const Color(0xFFD1495B),
+                            child: SizedBox(
+                              height: 100,
+                              child: _buildStatCard(
+                                context,
+                                label: 'Expense',
+                                value: currency.format(monthExpense),
+                                icon: Icons.arrow_upward_rounded,
+                                color: const Color(0xFFD1495B),
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      //
+                      //
+                      //
+
                       SizedBox(height: sectionGap),
                       Text(
                         'Quick Access',
