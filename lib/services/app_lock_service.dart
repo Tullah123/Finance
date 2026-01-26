@@ -22,8 +22,25 @@ class AppLockService {
   static const String _biometricsEnabledKey = 'app_lock_biometrics_enabled';
   static const String _pinHashKey = 'app_lock_pin_hash';
   static const String _pinSaltKey = 'app_lock_pin_salt';
+  static DateTime? _skipLockUntil;
 
   final LocalAuthentication _auth = LocalAuthentication();
+
+  static void skipNextLock({Duration duration = const Duration(seconds: 6)}) {
+    _skipLockUntil = DateTime.now().add(duration);
+  }
+
+  static bool shouldSkipLock() {
+    final until = _skipLockUntil;
+    if (until == null) {
+      return false;
+    }
+    if (DateTime.now().isBefore(until)) {
+      return true;
+    }
+    _skipLockUntil = null;
+    return false;
+  }
 
   Future<AppLockSettings> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();

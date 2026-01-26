@@ -753,6 +753,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _addTransaction(BuildContext context) {
+    final parentContext = context;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -779,19 +780,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               title: Text('Manual Entry'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddTransactionScreen(
-                      onSave: (transaction) async {
-                        widget.transactions.add(transaction);
-                        await widget.dataService
-                            .saveTransactions(widget.transactions);
-                        widget.onRefresh();
-                      },
+                Future.microtask(() {
+                  Navigator.of(parentContext).push(
+                    MaterialPageRoute(
+                      builder: (context) => AddTransactionScreen(
+                        onSave: (transaction) async {
+                          widget.transactions.add(transaction);
+                          await widget.dataService
+                              .saveTransactions(widget.transactions);
+                          widget.onRefresh();
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
+                });
               },
             ),
             ListTile(
@@ -800,19 +802,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               title: Text('Scan Receipt'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ReceiptScannerScreen(
-                      onSave: (transaction) async {
-                        widget.transactions.add(transaction);
-                        await widget.dataService
-                            .saveTransactions(widget.transactions);
-                        widget.onRefresh();
-                      },
+                Future.microtask(() {
+                  Navigator.of(parentContext).push(
+                    MaterialPageRoute(
+                      builder: (context) => ReceiptScannerScreen(
+                        onSave: (transaction) async {
+                          widget.transactions.add(transaction);
+                          await widget.dataService
+                              .saveTransactions(widget.transactions);
+                          widget.onRefresh();
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
+                });
               },
             ),
           ],

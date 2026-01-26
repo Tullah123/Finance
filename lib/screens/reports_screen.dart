@@ -1,7 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:file_picker/file_picker.dart';
 import '../models/transaction.dart';
 import '../services/statement_pdf_service.dart';
 import '../utils/constants.dart';
@@ -129,26 +128,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  Future<void> _openStatementPdf() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result == null || result.files.single.path == null) {
-      return;
-    }
-    final filePath = result.files.single.path!;
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StatementPdfViewerScreen(
-          filePath: filePath,
-          title: 'Statement PDF',
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -382,31 +361,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                         SizedBox(height: itemGap + 4),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed:
-                                    _isGenerating ? null : _generateStatement,
-                                icon:
-                                    const Icon(Icons.picture_as_pdf_rounded),
-                                label: Text(
-                                  _isGenerating
-                                      ? 'Creating...'
-                                      : 'Generate PDF',
-                                ),
-                              ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                _isGenerating ? null : _generateStatement,
+                            icon: const Icon(Icons.picture_as_pdf_rounded),
+                            label: Text(
+                              _isGenerating ? 'Creating...' : 'Generate PDF',
                             ),
-                            SizedBox(width: itemGap),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _openStatementPdf,
-                                icon:
-                                    const Icon(Icons.folder_open_rounded),
-                                label: const Text('Open PDF'),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

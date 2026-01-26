@@ -41,127 +41,128 @@ class _GoalsScreenState extends State<GoalsScreen> {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Column(
               children: [
-            // Header
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: hPad,
-                vertical: sectionGap,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
+                // Header
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: hPad,
+                    vertical: sectionGap,
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Financial Goals',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(30)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: itemGap / 2),
-                  Text(
-                    '${activeGoals.length} active â€¢ ${completedGoals.length} completed',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Financial Goals',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: itemGap / 2),
+                      Text(
+                        '${activeGoals.length} active ${completedGoals.length} completed',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // Goals List
-            Expanded(
-              child: widget.goals.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(30),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1B998B).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.flag_rounded,
-                              size: 80,
-                              color: const Color(0xFF1B998B),
-                            ),
+                // Goals List
+                Expanded(
+                  child: widget.goals.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(30),
+                                decoration: BoxDecoration(
+                                  color:
+                                      const Color(0xFF1B998B).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.flag_rounded,
+                                  size: 80,
+                                  color: const Color(0xFF1B998B),
+                                ),
+                              ),
+                              SizedBox(height: sectionGap),
+                              Text(
+                                'No goals yet',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: itemGap),
+                              Text(
+                                'Set your financial goals\nand start saving today!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: sectionGap),
-                          Text(
-                            'No goals yet',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                        )
+                      : ListView(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: hPad,
+                            vertical: sectionGap,
                           ),
-                          SizedBox(height: itemGap),
-                          Text(
-                            'Set your financial goals\nand start saving today!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: hPad,
-                        vertical: sectionGap,
-                      ),
-                      children: [
-                        if (activeGoals.isNotEmpty) ...[
-                          Text(
-                            'Active Goals',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: itemGap),
-                          ...activeGoals
-                              .map((goal) => _buildGoalCard(goal, false)),
-                          SizedBox(height: sectionGap),
-                        ],
-                        if (completedGoals.isNotEmpty) ...[
-                          Text(
-                            'Completed Goals',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: itemGap),
-                          ...completedGoals
-                              .map((goal) => _buildGoalCard(goal, true)),
-                        ],
-                      ],
-                    ),
-            ),
+                          children: [
+                            if (activeGoals.isNotEmpty) ...[
+                              Text(
+                                'Active Goals',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: itemGap),
+                              ...activeGoals
+                                  .map((goal) => _buildGoalCard(goal, false)),
+                              SizedBox(height: sectionGap),
+                            ],
+                            if (completedGoals.isNotEmpty) ...[
+                              Text(
+                                'Completed Goals',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: itemGap),
+                              ...completedGoals
+                                  .map((goal) => _buildGoalCard(goal, true)),
+                            ],
+                          ],
+                        ),
+                ),
               ],
             ),
           ),
@@ -259,20 +260,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              goal.title,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            goal.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           if (goal.description != null) ...[
                             const SizedBox(height: 4),
                             Text(
@@ -723,5 +724,3 @@ class _GoalsScreenState extends State<GoalsScreen> {
     );
   }
 }
-
-

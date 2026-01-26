@@ -5,8 +5,13 @@ import '../utils/layout.dart';
 
 class AppLockScreen extends StatefulWidget {
   final VoidCallback onUnlocked;
+  final bool allowCancel;
 
-  const AppLockScreen({Key? key, required this.onUnlocked}) : super(key: key);
+  const AppLockScreen({
+    Key? key,
+    required this.onUnlocked,
+    this.allowCancel = false,
+  }) : super(key: key);
 
   @override
   State<AppLockScreen> createState() => _AppLockScreenState();
@@ -97,93 +102,104 @@ class _AppLockScreenState extends State<AppLockScreen> {
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: hPad, vertical: sectionGap),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B998B).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_rounded,
-                      size: 48,
-                      color: Color(0xFF1B998B),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Unlock your account',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Use biometrics or your PIN to continue.',
-                    style: TextStyle(color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: sectionGap),
-                  if (_hasPin)
-                    TextField(
-                      controller: _pinController,
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      maxLength: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'PIN',
-                        hintText: 'Enter 4-digit PIN',
-                        counterText: '',
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop && widget.allowCancel) {
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPad,
+                  vertical: sectionGap,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B998B).withOpacity(0.12),
+                        shape: BoxShape.circle,
                       ),
-                      onSubmitted: (_) => _unlockWithPin(),
-                    ),
-                  if (_hasPin) const SizedBox(height: 12),
-                  if (_hasPin)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _unlockWithPin,
-                        child: const Text('Unlock'),
+                      child: const Icon(
+                        Icons.lock_rounded,
+                        size: 48,
+                        color: Color(0xFF1B998B),
                       ),
                     ),
-                  if (_biometricsEnabled && _biometricsAvailable) ...[
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            _isAuthenticating ? null : _authenticateWithBiometrics,
-                        icon: const Icon(Icons.fingerprint_rounded),
-                        label: Text(
-                          _isAuthenticating
-                              ? 'Checking...'
-                              : 'Use fingerprint / face',
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Unlock your account',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Use biometrics or your PIN to continue.',
+                      style: TextStyle(color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: sectionGap),
+                    if (_hasPin)
+                      TextField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        maxLength: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'PIN',
+                          hintText: 'Enter 4-digit PIN',
+                          counterText: '',
+                        ),
+                        onSubmitted: (_) => _unlockWithPin(),
+                      ),
+                    if (_hasPin) const SizedBox(height: 12),
+                    if (_hasPin)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _unlockWithPin,
+                          child: const Text('Unlock'),
                         ),
                       ),
-                    ),
+                    if (_biometricsEnabled && _biometricsAvailable) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isAuthenticating
+                              ? null
+                              : _authenticateWithBiometrics,
+                          icon: const Icon(Icons.fingerprint_rounded),
+                          label: Text(
+                            _isAuthenticating
+                                ? 'Checking...'
+                                : 'Use fingerprint / face',
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (!_hasPin &&
+                        !(_biometricsEnabled && _biometricsAvailable)) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'No unlock method is configured.',
+                        style: TextStyle(color: Colors.red[400]),
+                      ),
+                    ],
                   ],
-                  if (!_hasPin &&
-                      !(_biometricsEnabled && _biometricsAvailable)) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      'No unlock method is configured.',
-                      style: TextStyle(color: Colors.red[400]),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),

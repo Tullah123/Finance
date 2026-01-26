@@ -1,0 +1,6 @@
+# ninja log v5
+1	1152	7911512520774487	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	51d51b43abf160e3
+1154	1514	7911512524814636	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/armeabi-v7a/libbbhelper.so	8028759bba0fac04
+8	230	7911528979210352	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/armeabi-v7a/libbbhelper.so	8028759bba0fac04
+15	414	7911559152096799	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/armeabi-v7a/libbbhelper.so	8028759bba0fac04
+7	254	7911570911464959	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/armeabi-v7a/libbbhelper.so	8028759bba0fac04

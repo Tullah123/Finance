@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../models/receipt_scan_result.dart';
 import '../models/transaction.dart';
+import '../services/app_lock_service.dart';
 import '../services/receipt_scanner_service.dart';
 import '../utils/constants.dart';
 
@@ -167,11 +168,11 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
               ),
               child: Icon(
                 Icons.receipt_long_rounded,
-                size: 80,
+                size: 50, // old 80
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 15), //old 40
             Text(
               'Scan Your Receipt',
               style: TextStyle(
@@ -180,7 +181,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 8), //old 15
             Text(
               'Use camera, gallery, or PDF to\nextract transaction details',
               textAlign: TextAlign.center,
@@ -190,7 +191,11 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 50),
+            //
+            //
+            const SizedBox(height: 8), //50 old
+            //
+            //
             _buildScanButton(
               'Take Photo',
               Icons.camera_alt_rounded,
@@ -327,7 +332,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
             const SizedBox(height: 16),
           ],
-
           _buildSectionCard(
             title: 'Classification',
             child: Column(
@@ -363,7 +367,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Merchant / Payer',
             child: TextFormField(
@@ -384,7 +387,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Amount',
             child: TextFormField(
@@ -419,7 +421,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Tax (Optional)',
             child: TextFormField(
@@ -434,7 +435,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Currency',
             child: TextFormField(
@@ -448,7 +448,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Payment Method (Optional)',
             child: TextFormField(
@@ -462,7 +461,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Category',
             child: DropdownButtonFormField<String>(
@@ -487,7 +485,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Date & Time',
             child: Row(
@@ -563,7 +560,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _buildSectionCard(
             title: 'Notes (Optional)',
             child: TextFormField(
@@ -578,7 +574,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
           ),
           const SizedBox(height: 30),
-
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -711,6 +706,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   }
 
   Future<void> _scanFromCamera() async {
+    AppLockService.skipNextLock(duration: const Duration(seconds: 10));
     setState(() => _isProcessing = true);
     final result = await _scannerService.scanReceiptFromCamera();
     if (!mounted) return;
@@ -720,6 +716,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   }
 
   Future<void> _scanFromGallery() async {
+    AppLockService.skipNextLock(duration: const Duration(seconds: 10));
     setState(() => _isProcessing = true);
     final result = await _scannerService.scanReceiptFromGallery();
     if (!mounted) return;
@@ -729,6 +726,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   }
 
   Future<void> _scanFromPdf() async {
+    AppLockService.skipNextLock(duration: const Duration(seconds: 10));
     setState(() => _isProcessing = true);
     final result = await _scannerService.scanReceiptFromPdf();
     if (!mounted) return;
@@ -752,6 +750,8 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       _selectedTime = TimeOfDay.fromDateTime(result.date);
     });
   }
+
+
 
   Future<void> _selectDate() async {
     final date = await showDatePicker(
@@ -869,5 +869,3 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     );
   }
 }
-
-

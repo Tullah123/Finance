@@ -1,0 +1,3 @@
+D:/FYP/finance_app/third_party/pdf_render/android/.cxx/RelWithDebInfo/3i4h3u2n/x86/CMakeFiles/bbhelper.dir
+D:/FYP/finance_app/third_party/pdf_render/android/.cxx/RelWithDebInfo/3i4h3u2n/x86/CMakeFiles/edit_cache.dir
+D:/FYP/finance_app/third_party/pdf_render/android/.cxx/RelWithDebInfo/3i4h3u2n/x86/CMakeFiles/rebuild_cache.dir

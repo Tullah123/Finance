@@ -14,8 +14,9 @@ class AppEntryScreen extends StatefulWidget {
 class _AppEntryScreenState extends State<AppEntryScreen>
     with WidgetsBindingObserver {
   final AppLockService _lockService = AppLockService();
-  bool _isLocked = false;
   bool _isLoading = true;
+  bool _lockEnabled = false;
+  bool _lockRouteVisible = false;
   bool _shouldLockOnResume = false;
 
   @override
@@ -39,6 +40,9 @@ class _AppEntryScreenState extends State<AppEntryScreen>
     }
     if (state == AppLifecycleState.resumed && _shouldLockOnResume) {
       _shouldLockOnResume = false;
+      if (AppLockService.shouldSkipLock()) {
+        return;
+      }
       _refreshLockState();
     }
   }
@@ -47,23 +51,39 @@ class _AppEntryScreenState extends State<AppEntryScreen>
     final settings = await _lockService.loadSettings();
     if (!mounted) return;
     setState(() {
-      _isLocked = settings.isEnabled;
+      _lockEnabled = settings.isEnabled;
       _isLoading = false;
     });
+    if (_lockEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _presentLockScreen();
+      });
+    }
   }
 
   Future<void> _refreshLockState() async {
     final settings = await _lockService.loadSettings();
     if (!mounted) return;
     setState(() {
-      _isLocked = settings.isEnabled;
+      _lockEnabled = settings.isEnabled;
     });
+    if (_lockEnabled) {
+      _presentLockScreen();
+    }
   }
 
-  void _handleUnlocked() {
-    setState(() {
-      _isLocked = false;
-    });
+  Future<void> _presentLockScreen() async {
+    if (_lockRouteVisible || !_lockEnabled) return;
+    _lockRouteVisible = true;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => AppLockScreen(
+          onUnlocked: () => Navigator.of(context).pop(true),
+        ),
+      ),
+    );
+    _lockRouteVisible = false;
   }
 
   @override
@@ -72,9 +92,6 @@ class _AppEntryScreenState extends State<AppEntryScreen>
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
-    }
-    if (_isLocked) {
-      return AppLockScreen(onUnlocked: _handleUnlocked);
     }
     return const MainScreen();
   }
