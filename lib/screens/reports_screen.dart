@@ -1,9 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/transaction.dart';
+import '../services/statement_pdf_service.dart';
 import '../utils/constants.dart';
 import '../utils/layout.dart';
+import 'statement_pdf_viewer_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -20,6 +23,8 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   String _selectedPeriod = 'month';
   DateTime _selectedDate = DateTime.now();
+  final StatementPdfService _statementPdfService = StatementPdfService();
+  bool _isGenerating = false;
 
   List<Transaction> get _filteredTransactions {
     return widget.transactions.where((t) {
@@ -28,9 +33,121 @@ class _ReportsScreenState extends State<ReportsScreen> {
             t.date.month == _selectedDate.month;
       } else if (_selectedPeriod == 'year') {
         return t.date.year == _selectedDate.year;
+      } else if (_selectedPeriod == 'week') {
+        final start = _weekStart(_selectedDate);
+        final end = _weekEnd(_selectedDate);
+        final date = DateTime(t.date.year, t.date.month, t.date.day);
+        return !date.isBefore(start) && !date.isAfter(end);
       }
       return true;
     }).toList();
+  }
+
+  DateTime _weekStart(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return normalized.subtract(Duration(days: normalized.weekday - 1));
+  }
+
+  DateTime _weekEnd(DateTime date) {
+    return _weekStart(date).add(const Duration(days: 6));
+  }
+
+  DateTime _periodStart() {
+    if (_selectedPeriod == 'year') {
+      return DateTime(_selectedDate.year, 1, 1);
+    }
+    if (_selectedPeriod == 'week') {
+      return _weekStart(_selectedDate);
+    }
+    return DateTime(_selectedDate.year, _selectedDate.month, 1);
+  }
+
+  DateTime _periodEnd() {
+    if (_selectedPeriod == 'year') {
+      return DateTime(_selectedDate.year, 12, 31);
+    }
+    if (_selectedPeriod == 'week') {
+      return _weekEnd(_selectedDate);
+    }
+    return DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
+  }
+
+  String _periodLabel() {
+    if (_selectedPeriod == 'year') {
+      return DateFormat('yyyy').format(_selectedDate);
+    }
+    if (_selectedPeriod == 'week') {
+      final start = _weekStart(_selectedDate);
+      final end = _weekEnd(_selectedDate);
+      return '${DateFormat('MMM dd').format(start)} - ${DateFormat('MMM dd').format(end)}';
+    }
+    return DateFormat('MMMM yyyy').format(_selectedDate);
+  }
+
+  String _periodKey() {
+    switch (_selectedPeriod) {
+      case 'week':
+        return 'week';
+      case 'year':
+        return 'year';
+      case 'month':
+      default:
+        return 'month';
+    }
+  }
+
+  Future<void> _generateStatement() async {
+    if (_isGenerating) return;
+    setState(() => _isGenerating = true);
+    try {
+      final file = await _statementPdfService.generateStatement(
+        transactions: _filteredTransactions,
+        periodLabel: _periodLabel(),
+        periodKey: _periodKey(),
+        periodStart: _periodStart(),
+        periodEnd: _periodEnd(),
+      );
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StatementPdfViewerScreen(
+            filePath: file.path,
+            title: 'Statement ${_periodLabel()}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate PDF: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      }
+    }
+  }
+
+  Future<void> _openStatementPdf() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result == null || result.files.single.path == null) {
+      return;
+    }
+    final filePath = result.files.single.path!;
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StatementPdfViewerScreen(
+          filePath: filePath,
+          title: 'Statement PDF',
+        ),
+      ),
+    );
   }
 
   @override
@@ -103,6 +220,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Row(
                     children: [
                       Expanded(
+                        child: _buildPeriodButton('Week', 'week'),
+                      ),
+                      SizedBox(width: itemGap),
+                      Expanded(
                         child: _buildPeriodButton('Month', 'month'),
                       ),
                       SizedBox(width: itemGap),
@@ -138,9 +259,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   _selectedDate.year,
                                   _selectedDate.month - 1,
                                 );
-                              } else {
+                              } else if (_selectedPeriod == 'year') {
                                 _selectedDate =
                                     DateTime(_selectedDate.year - 1);
+                              } else {
+                                _selectedDate =
+                                    _selectedDate.subtract(Duration(days: 7));
                               }
                             });
                           },
@@ -148,10 +272,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         Expanded(
                           child: Center(
                             child: Text(
-                              _selectedPeriod == 'month'
-                                  ? DateFormat('MMMM yyyy')
-                                      .format(_selectedDate)
-                                  : DateFormat('yyyy').format(_selectedDate),
+                              _periodLabel(),
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -172,9 +293,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   _selectedDate.year,
                                   _selectedDate.month + 1,
                                 );
-                              } else {
+                              } else if (_selectedPeriod == 'year') {
                                 _selectedDate =
                                     DateTime(_selectedDate.year + 1);
+                              } else {
+                                _selectedDate =
+                                    _selectedDate.add(Duration(days: 7));
                               }
                             });
                           },
@@ -224,6 +348,68 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     balance >= 0
                         ? Icons.trending_up_rounded
                         : Icons.trending_down_rounded,
+                  ),
+                  SizedBox(height: sectionGap + 5),
+
+                  // Statement Actions
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 15,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Statements',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Generate a PDF statement for the selected period.',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        SizedBox(height: itemGap + 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    _isGenerating ? null : _generateStatement,
+                                icon:
+                                    const Icon(Icons.picture_as_pdf_rounded),
+                                label: Text(
+                                  _isGenerating
+                                      ? 'Creating...'
+                                      : 'Generate PDF',
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: itemGap),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _openStatementPdf,
+                                icon:
+                                    const Icon(Icons.folder_open_rounded),
+                                label: const Text('Open PDF'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: sectionGap + 5),
 

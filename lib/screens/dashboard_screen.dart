@@ -10,6 +10,7 @@ import '../screens/goals_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/transactions_screen.dart';
 import '../screens/budgets_screen.dart';
+import '../screens/settings_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Transaction> transactions;
@@ -189,22 +190,32 @@ class DashboardScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
                                 ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.notifications_rounded,
-                              color: colorScheme.primary,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.settings_rounded,
+                                color: colorScheme.primary,
+                              ),
                             ),
                           ),
                         ],
