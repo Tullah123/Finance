@@ -751,8 +751,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     });
   }
 
-
-
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,

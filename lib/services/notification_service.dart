@@ -33,7 +33,7 @@ class NotificationService {
       android: androidSettings,
       iOS: iosSettings,
     );
-    await _plugin.initialize(initSettings);
+    await _plugin.initialize(settings: initSettings);
 
     // FIX 1: use tzdata.initializeTimeZones() + FlutterTimezone
     tzdata.initializeTimeZones();
@@ -204,7 +204,7 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _plugin.initialize(initSettings);
+    await _plugin.initialize(settings: initSettings);
 
     // Create Android notification channel with sound (first creation wins).
     if (Platform.isAndroid) {
@@ -276,42 +276,36 @@ class NotificationService {
 
     if (nearUtc.isAfter(nowUtc)) {
       await _plugin.zonedSchedule(
-        baseId + 1,
-        'Reminder soon',
-        '${reminder.title} expires at $expiryLabel',
-        tz.TZDateTime.from(nearUtc, location),
-        details,
+        id: baseId + 1,
+        title: 'Reminder soon',
+        body: '${reminder.title} expires at $expiryLabel',
+        scheduledDate: tz.TZDateTime.from(nearUtc, location),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     }
 
     if (expiryUtc.isAfter(nowUtc)) {
       await _plugin.zonedSchedule(
-        baseId + 2,
-        'Reminder due',
-        '${reminder.title} expires now ($expiryLabel)',
-        tz.TZDateTime.from(expiryUtc, location),
-        details,
+        id: baseId + 2,
+        title: 'Reminder due',
+        body: '${reminder.title} expires now ($expiryLabel)',
+        scheduledDate: tz.TZDateTime.from(expiryUtc, location),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     }
 
     if (postUtc.isAfter(nowUtc)) {
       await _plugin.zonedSchedule(
-        baseId + 3,
-        'Reminder follow-up',
-        '${reminder.title} expired at $expiryLabel',
-        tz.TZDateTime.from(postUtc, location),
-        details,
+        id: baseId + 3,
+        title: 'Reminder follow-up',
+        body: '${reminder.title} expired at $expiryLabel',
+        scheduledDate: tz.TZDateTime.from(postUtc, location),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     }
@@ -321,14 +315,12 @@ class NotificationService {
       if (!alertUtc.isAfter(nowUtc)) continue;
       final alertLabel = _formatLabel(reminder, alertUtc);
       await _plugin.zonedSchedule(
-        baseId + _extraAlertBaseOffset + i,
-        'Reminder alert',
-        '${reminder.title} at $alertLabel',
-        tz.TZDateTime.from(alertUtc, location),
-        details,
+        id: baseId + _extraAlertBaseOffset + i,
+        title: 'Reminder alert',
+        body: '${reminder.title} at $alertLabel',
+        scheduledDate: tz.TZDateTime.from(alertUtc, location),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     }
@@ -337,11 +329,11 @@ class NotificationService {
   Future<void> cancelReminder(String reminderId, {int extraCount = 0}) async {
     await init();
     final baseId = _baseId(reminderId);
-    await _plugin.cancel(baseId + 1);
-    await _plugin.cancel(baseId + 2);
-    await _plugin.cancel(baseId + 3);
+    await _plugin.cancel(id: baseId + 1);
+    await _plugin.cancel(id: baseId + 2);
+    await _plugin.cancel(id: baseId + 3);
     for (var i = 0; i < extraCount; i++) {
-      await _plugin.cancel(baseId + _extraAlertBaseOffset + i);
+      await _plugin.cancel(id: baseId + _extraAlertBaseOffset + i);
     }
   }
 

@@ -37,9 +37,3 @@ flutter:
       web:
         pluginClass: FilePickerWeb
         fileName: _internal/file_picker_web.dart
-      macos:
-        default_package: file_picker
-      windows:
-        default_package: file_picker
-      linux:
-        default_package: file_picker
