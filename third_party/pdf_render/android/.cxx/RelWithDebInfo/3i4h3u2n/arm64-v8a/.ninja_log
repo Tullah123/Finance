@@ -1,7 +1,3 @@
 # ninja log v5
-0	1478	7911508095415157	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	9f245dc06c551a29
-1481	1838	7911508099046033	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67
-65	487	7911528973506354	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67
-61	819	7911559142247425	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67
-47	672	7911570890716029	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67
-56	994	7912068201557852	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67
+0	1371	7912103482542638	CMakeFiles/bbhelper.dir/c++/directBufferAndroid.cpp.o	9f245dc06c551a29
+1372	1558	7912103484416286	D:/FYP/finance_app/build/pdf_render/intermediates/cxx/RelWithDebInfo/3i4h3u2n/obj/arm64-v8a/libbbhelper.so	385160c2bd07bd67

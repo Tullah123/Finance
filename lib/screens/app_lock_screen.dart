@@ -62,6 +62,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     if (!mounted) return;
     setState(() => _isAuthenticating = false);
     if (success) {
+      AppLockService.skipNextLock();
       widget.onUnlocked();
     } else {
       _showMessage('Biometric authentication failed.');
@@ -77,6 +78,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     final isValid = await _lockService.verifyPin(pin);
     if (!mounted) return;
     if (isValid) {
+      AppLockService.skipNextLock();
       widget.onUnlocked();
     } else {
       _showMessage('Incorrect PIN.');
