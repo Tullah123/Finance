@@ -96,32 +96,44 @@ class _MainScreenState extends State<MainScreen> {
       ),
     ];
 
-    return Scaffold(
-      body: screens[_selectedIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(Icons.home_rounded, 'Home', 0),
-                _buildNavItem(Icons.receipt_long_rounded, 'Transactions', 1),
-                _buildNavItem(Icons.pie_chart_rounded, 'Budgets', 2),
-                _buildNavItem(Icons.flag_rounded, 'Goals', 3),
-                _buildNavItem(Icons.bar_chart_rounded, 'Reports', 4),
-                _buildNavItem(Icons.alarm_rounded, 'Reminders', 5),
-              ],
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectedIndex != 0) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        body: screens[_selectedIndex],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(Icons.home_rounded, 'Home', 0),
+                  _buildNavItem(Icons.receipt_long_rounded, 'Transactions', 1),
+                  _buildNavItem(Icons.pie_chart_rounded, 'Budgets', 2),
+                  _buildNavItem(Icons.flag_rounded, 'Goals', 3),
+                  _buildNavItem(Icons.bar_chart_rounded, 'Reports', 4),
+                  _buildNavItem(Icons.alarm_rounded, 'Reminders', 5),
+                ],
+              ),
             ),
           ),
         ),

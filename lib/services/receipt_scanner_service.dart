@@ -114,7 +114,7 @@ class ReceiptScannerService {
     try {
       final inputImage = InputImage.fromFile(imageFile);
       final recognizedText = await _textRecognizer.processImage(inputImage);
-      final rawText = recognizedText.text.trim();
+      final rawText = _normalizeRecognizedText(recognizedText);
 
       if (rawText.isEmpty) {
         return ReceiptScanResult(
@@ -221,6 +221,30 @@ class ReceiptScannerService {
     }
   }
 
+  String _normalizeRecognizedText(RecognizedText recognizedText) {
+    final lines = <_OcrLine>[];
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        final text = line.text.trim();
+        if (text.isEmpty) continue;
+        final rect = line.boundingBox;
+        lines.add(_OcrLine(text: text, top: rect.top, left: rect.left));
+      }
+    }
+
+    if (lines.isEmpty) {
+      return recognizedText.text.trim();
+    }
+
+    lines.sort((a, b) {
+      final topCompare = a.top.compareTo(b.top);
+      if (topCompare != 0) return topCompare;
+      return a.left.compareTo(b.left);
+    });
+
+    return lines.map((line) => line.text).join('\n').trim();
+  }
+
   void dispose() {
     _textRecognizer.close();
   }
@@ -233,6 +257,18 @@ class ReceiptScannerService {
     // ignore: avoid_print
     print('[receipt_scan][$event] $payload');
   }
+}
+
+class _OcrLine {
+  final String text;
+  final double top;
+  final double left;
+
+  const _OcrLine({
+    required this.text,
+    required this.top,
+    required this.left,
+  });
 }
 
 

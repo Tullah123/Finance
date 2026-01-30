@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 
 class ReceiptParseResult {
   final String merchant;
@@ -43,6 +43,78 @@ class ReceiptParser {
     'bank transfer',
   ];
 
+  static final RegExp _numericDateRegex = RegExp(
+    r'(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})|(\d{2,4}[-/]\d{1,2}[-/]\d{1,2})',
+  );
+
+  static final RegExp _monthNameRegex = RegExp(
+    r'\b(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _amountTokenRegex = RegExp(
+    r'(?<!\d)(?:[0-9OolI][0-9OolI\s,\.]*[0-9OolI]|[0-9OolI])(?:[.,]\d{1,2})?(?!\d)',
+  );
+
+  static final RegExp _totalStrongRegex = RegExp(
+    r'\b(grand total|total due|amount due|balance due|amount payable|net total|total amount|total)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _totalWeakRegex = RegExp(
+    r'\b(amount|paid|tendered|balance)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _totalExcludeRegex = RegExp(
+    r'\b(subtotal|sub total|tax|vat|gst|discount|change|cash back|cashback|rounding|tip|gratuity|service charge|delivery|shipping|fee|charge)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _metaLineRegex = RegExp(
+    r'\b(tel|phone|fax|invoice|order|receipt|ref|reference|auth|approval|transaction|card|terminal|pos|cashier|table|guest|vat no|tax id|gstin|tin|ntn|www|http|email)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _merchantLabelRegex = RegExp(
+    r'\b(sent\s*to|paid\s*to|pay\s*to|receiver|recipient|beneficiary|account\s*details|account\s*name|received\s*from|from)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _merchantExcludeRegex = RegExp(
+    r'\b(transaction successful|funding source|sent by|fee|charge|total amount|amount|id#|transaction id|reference|receipt)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _taxRegex = RegExp(
+    r'\b(tax|vat|gst|cgst|sgst|igst|sales tax)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _currencyLineRegex = RegExp(
+    r'\b(r\s*s\.?|rs\.?|pkr|rupees)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _amountLabelRegex = RegExp(
+    r'\b(total\s*amount|amount\s*paid|amount\s*due|amount|sent|received|debited|credited)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _time24Regex = RegExp(
+    r'\b([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?\b',
+  );
+
+  static final RegExp _time12Regex = RegExp(
+    r'\b(1[0-2]|0?[1-9]):([0-5]\d)(?::([0-5]\d))?\s*([ap]m)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _time12ShortRegex = RegExp(
+    r'\b(1[0-2]|0?[1-9])\s*([ap]m)\b',
+    caseSensitive: false,
+  );
+
   ReceiptParseResult parse(String rawText) {
     final lines = rawText
         .split('\n')
@@ -52,14 +124,16 @@ class ReceiptParser {
 
     final currency = _extractCurrency(rawText);
     final merchant = _extractMerchant(lines);
-    final date = _extractDate(lines) ?? DateTime.now();
+    final date = _extractDate(lines);
+    final time = _extractTime(lines);
+    final resolvedDate = _combineDateTime(date, time);
     final total = _extractTotal(lines);
     final tax = _extractTax(lines);
     final paymentMethod = _extractPaymentMethod(rawText);
 
     return ReceiptParseResult(
       merchant: merchant,
-      date: date,
+      date: resolvedDate,
       total: total,
       tax: tax,
       currency: currency,
@@ -68,47 +142,311 @@ class ReceiptParser {
   }
 
   String _extractCurrency(String text) {
+    final upper = text.toUpperCase();
+    if (RegExp(r'\bR\s*S\.?\b', caseSensitive: false).hasMatch(text)) {
+      return 'PKR';
+    }
     for (final token in _currencyTokens) {
-      if (text.toUpperCase().contains(token.toUpperCase())) {
-        return token == 'Rs' ? 'PKR' : token;
+      if (token == 'Rs') continue;
+      if (upper.contains(token.toUpperCase())) {
+        return token;
       }
     }
-    if (text.contains('\$')) return 'USD';
-    if (text.contains('â‚¬')) return 'EUR';
-    if (text.contains('Â£')) return 'GBP';
+    if (text.contains(r'$')) return 'USD';
+    if (text.contains('\u20AC')) return 'EUR';
+    if (text.contains('\u00A3')) return 'GBP';
+    if (text.contains('\u20B9')) return 'INR';
     return 'PKR';
   }
 
   String _extractMerchant(List<String> lines) {
-    for (final line in lines.take(8)) {
+    if (lines.isEmpty) return 'Unknown Merchant';
+    final labeled = _extractMerchantFromLabels(lines);
+    if (labeled != null && labeled.isNotEmpty) {
+      return labeled;
+    }
+
+    final maxLines = min(lines.length, 12);
+    String bestLine = lines.first;
+    int bestScore = -9999;
+
+    for (var i = 0; i < maxLines; i++) {
+      final line = lines[i];
       final lower = line.toLowerCase();
       if (lower.contains('total') ||
           lower.contains('subtotal') ||
           lower.contains('tax') ||
           lower.contains('receipt') ||
           lower.contains('invoice')) {
-        continue;
+        // Still consider, but with penalty.
       }
-      if (RegExp(r'[a-zA-Z]').hasMatch(line) &&
-          !RegExp(r'\d{3,}').hasMatch(line)) {
-        return line;
+      final letterCount = RegExp(r'[A-Za-z]').allMatches(line).length;
+      final digitCount = RegExp(r'\d').allMatches(line).length;
+      final hasUrl = lower.contains('www') || lower.contains('http');
+      final hasContact = lower.contains('tel') || lower.contains('phone');
+      int score = (letterCount * 2) - (digitCount * 2);
+      if (i == 0) score += 5;
+      if (line.length > 40) score -= 4;
+      if (_metaLineRegex.hasMatch(lower)) score -= 12;
+      if (_totalExcludeRegex.hasMatch(lower)) score -= 8;
+      if (_merchantExcludeRegex.hasMatch(lower)) score -= 20;
+      if (hasUrl) score -= 10;
+      if (hasContact) score -= 10;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestLine = line;
       }
     }
-    return lines.isNotEmpty ? lines.first : 'Unknown Merchant';
+
+    return bestLine.isNotEmpty ? bestLine : 'Unknown Merchant';
+  }
+
+  String? _extractMerchantFromLabels(List<String> lines) {
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = line.toLowerCase();
+      final keywordLine = _normalizeForKeywords(lower);
+      if (!_merchantLabelRegex.hasMatch(keywordLine)) continue;
+
+      final inline = _extractInlineLabelValue(line, lower);
+      if (inline != null && _isCandidateNameLine(inline)) {
+        return inline;
+      }
+
+      for (var j = i + 1; j < min(lines.length, i + 4); j++) {
+        final candidate = lines[j].trim();
+        if (_isCandidateNameLine(candidate)) {
+          return candidate;
+        }
+      }
+    }
+    return null;
+  }
+
+  String? _extractInlineLabelValue(String line, String lower) {
+    final match = _merchantLabelRegex.firstMatch(lower);
+    if (match == null) return null;
+    final label = match.group(0)!;
+    final start = lower.indexOf(label);
+    if (start < 0) return null;
+    var remainder = line.substring(start + label.length).trim();
+    if (remainder.startsWith(':') || remainder.startsWith('-')) {
+      remainder = remainder.substring(1).trim();
+    }
+    return remainder.isEmpty ? null : remainder;
+  }
+
+  bool _isCandidateNameLine(String line) {
+    if (line.isEmpty) return false;
+    final lower = line.toLowerCase();
+    if (!RegExp(r'[A-Za-z]').hasMatch(line)) return false;
+    if (_metaLineRegex.hasMatch(lower)) return false;
+    if (_merchantExcludeRegex.hasMatch(lower)) return false;
+    if (_totalExcludeRegex.hasMatch(lower)) return false;
+    if (RegExp(r'\d{7,}').hasMatch(line) &&
+        RegExp(r'[A-Za-z]').allMatches(line).length < 3) {
+      return false;
+    }
+    return true;
   }
 
   DateTime? _extractDate(List<String> lines) {
-    final dateRegex = RegExp(
-        r'(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})|(\d{2,4}[-/]\d{1,2}[-/]\d{1,2})');
     for (final line in lines) {
-      final match = dateRegex.firstMatch(line);
-      if (match != null) {
-        final dateStr = match.group(0)!;
+      final numericMatch = _numericDateRegex.firstMatch(line);
+      if (numericMatch != null) {
+        final dateStr = numericMatch.group(0)!;
         final parsed = _parseDate(dateStr);
+        if (parsed != null) return parsed;
+      }
+
+      if (_monthNameRegex.hasMatch(line)) {
+        final parsed = _parseMonthNameDate(line);
         if (parsed != null) return parsed;
       }
     }
     return null;
+  }
+
+  _ParsedTime? _extractTime(List<String> lines) {
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      final hasDate =
+          _numericDateRegex.hasMatch(line) || _monthNameRegex.hasMatch(line);
+      if (!hasDate) continue;
+
+      final match12 = _time12Regex.firstMatch(lower);
+      if (match12 != null) {
+        final hour = int.tryParse(match12.group(1) ?? '');
+        final minute = int.tryParse(match12.group(2) ?? '');
+        final second = int.tryParse(match12.group(3) ?? '0') ?? 0;
+        final meridiem = match12.group(4) ?? '';
+        if (hour == null || minute == null) continue;
+        final isPm = meridiem.startsWith('p');
+        final normalizedHour = (hour % 12) + (isPm ? 12 : 0);
+        return _ParsedTime(
+          hour: normalizedHour,
+          minute: minute,
+          second: second,
+        );
+      }
+
+      final match24 = _time24Regex.firstMatch(line);
+      if (match24 != null) {
+        final hour = int.tryParse(match24.group(1) ?? '');
+        final minute = int.tryParse(match24.group(2) ?? '');
+        final second = int.tryParse(match24.group(3) ?? '0') ?? 0;
+        if (hour == null || minute == null) continue;
+        return _ParsedTime(hour: hour, minute: minute, second: second);
+      }
+    }
+
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      final match12 = _time12Regex.firstMatch(lower);
+      if (match12 != null) {
+        final hour = int.tryParse(match12.group(1) ?? '');
+        final minute = int.tryParse(match12.group(2) ?? '');
+        final second = int.tryParse(match12.group(3) ?? '0') ?? 0;
+        final meridiem = match12.group(4) ?? '';
+        if (hour == null || minute == null) continue;
+        final isPm = meridiem.startsWith('p');
+        final normalizedHour =
+            (hour % 12) + (isPm ? 12 : 0);
+        return _ParsedTime(
+          hour: normalizedHour,
+          minute: minute,
+          second: second,
+        );
+      }
+    }
+
+    for (final line in lines) {
+      final match24 = _time24Regex.firstMatch(line);
+      if (match24 != null) {
+        final hour = int.tryParse(match24.group(1) ?? '');
+        final minute = int.tryParse(match24.group(2) ?? '');
+        final second = int.tryParse(match24.group(3) ?? '0') ?? 0;
+        if (hour == null || minute == null) continue;
+        return _ParsedTime(hour: hour, minute: minute, second: second);
+      }
+    }
+
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      final matchShort = _time12ShortRegex.firstMatch(lower);
+      if (matchShort != null) {
+        final hour = int.tryParse(matchShort.group(1) ?? '');
+        final meridiem = matchShort.group(2) ?? '';
+        if (hour == null) continue;
+        final isPm = meridiem.startsWith('p');
+        final normalizedHour =
+            (hour % 12) + (isPm ? 12 : 0);
+        return _ParsedTime(hour: normalizedHour, minute: 0, second: 0);
+      }
+    }
+
+    return null;
+  }
+
+  DateTime _combineDateTime(DateTime? date, _ParsedTime? time) {
+    final base = date ?? DateTime.now();
+    if (time == null) return date ?? base;
+    return DateTime(
+      base.year,
+      base.month,
+      base.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
+
+  DateTime? _parseMonthNameDate(String line) {
+    final normalized = line.replaceAll(RegExp(r'[\-/,]'), ' ');
+    final pattern1 = RegExp(
+      r'\b(\d{1,2})\s*(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)\s*(\d{2,4})\b',
+      caseSensitive: false,
+    );
+    final pattern2 = RegExp(
+      r'\b(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)\s*(\d{1,2})[,]?\s*(\d{2,4})\b',
+      caseSensitive: false,
+    );
+
+    RegExpMatch? match = pattern1.firstMatch(normalized);
+    if (match != null) {
+      final day = int.tryParse(match.group(1) ?? '');
+      final month = _monthNumber(match.group(2));
+      final year = _normalizeYear(match.group(3));
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    match = pattern2.firstMatch(normalized);
+    if (match != null) {
+      final month = _monthNumber(match.group(1));
+      final day = int.tryParse(match.group(2) ?? '');
+      final year = _normalizeYear(match.group(3));
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    return null;
+  }
+
+  int? _monthNumber(String? token) {
+    if (token == null) return null;
+    switch (token.toLowerCase()) {
+      case 'jan':
+      case 'january':
+        return 1;
+      case 'feb':
+      case 'february':
+        return 2;
+      case 'mar':
+      case 'march':
+        return 3;
+      case 'apr':
+      case 'april':
+        return 4;
+      case 'may':
+        return 5;
+      case 'jun':
+      case 'june':
+        return 6;
+      case 'jul':
+      case 'july':
+        return 7;
+      case 'aug':
+      case 'august':
+        return 8;
+      case 'sep':
+      case 'sept':
+      case 'september':
+        return 9;
+      case 'oct':
+      case 'october':
+        return 10;
+      case 'nov':
+      case 'november':
+        return 11;
+      case 'dec':
+      case 'december':
+        return 12;
+    }
+    return null;
+  }
+
+  int? _normalizeYear(String? yearToken) {
+    if (yearToken == null) return null;
+    final year = int.tryParse(yearToken);
+    if (year == null) return null;
+    if (yearToken.length == 2) {
+      return 2000 + year;
+    }
+    return year;
   }
 
   DateTime? _parseDate(String dateStr) {
@@ -149,39 +487,31 @@ class ReceiptParser {
   }
 
   double _extractTotal(List<String> lines) {
-    final totalRegex = RegExp(
-      r'(total|amount|grand total|balance due|paid)\s*[:\-]?\s*([0-9,]+(\.[0-9]{1,2})?)',
-      caseSensitive: false,
-    );
-    for (final line in lines) {
-      final match = totalRegex.firstMatch(line);
-      if (match != null) {
-        final value = _parseAmount(match.group(2)!);
-        if (value != null) return value;
-      }
-    }
-
-    final amounts = <double>[];
-    final amountRegex = RegExp(r'([0-9,]+(\.[0-9]{1,2})?)');
-    for (final line in lines) {
-      for (final match in amountRegex.allMatches(line)) {
-        final value = _parseAmount(match.group(1)!);
-        if (value != null) amounts.add(value);
-      }
-    }
-    if (amounts.isEmpty) return 0.0;
-    return amounts.reduce(max);
+    final candidates = _collectAmountCandidates(lines);
+    if (candidates.isEmpty) return 0.0;
+    candidates.sort((a, b) {
+      final scoreCompare = b.score.compareTo(a.score);
+      if (scoreCompare != 0) return scoreCompare;
+      final valueCompare = b.value.compareTo(a.value);
+      if (valueCompare != 0) return valueCompare;
+      return b.lineIndex.compareTo(a.lineIndex);
+    });
+    return candidates.first.value;
   }
 
   double? _extractTax(List<String> lines) {
-    final taxRegex = RegExp(
-      r'(tax|vat|gst)\s*[:\-]?\s*([0-9,]+(\.[0-9]{1,2})?)',
-      caseSensitive: false,
-    );
-    for (final line in lines) {
-      final match = taxRegex.firstMatch(line);
-      if (match != null) {
-        return _parseAmount(match.group(2)!);
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = line.toLowerCase();
+      if (!_taxRegex.hasMatch(lower)) continue;
+      if (_metaLineRegex.hasMatch(lower)) continue;
+
+      final amounts = _extractAmountsFromLine(line);
+      if (amounts.isNotEmpty) return amounts.last;
+
+      if (i + 1 < lines.length) {
+        final nextAmounts = _extractAmountsFromLine(lines[i + 1]);
+        if (nextAmounts.isNotEmpty) return nextAmounts.first;
       }
     }
     return null;
@@ -201,10 +531,239 @@ class ReceiptParser {
     return null;
   }
 
+  List<_AmountCandidate> _collectAmountCandidates(List<String> lines) {
+    final candidates = <_AmountCandidate>[];
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = line.toLowerCase();
+      final keywordLine = _normalizeForKeywords(lower);
+      if (_lineLooksLikeDateOnly(line, lower) &&
+          !_totalStrongRegex.hasMatch(keywordLine)) {
+        continue;
+      }
+      if (_metaLineRegex.hasMatch(lower) &&
+          !_totalStrongRegex.hasMatch(keywordLine)) {
+        continue;
+      }
+
+      final lineScore = _scoreAmountLine(line, lower, keywordLine, i, lines.length);
+      var amounts = _extractAmountsFromLine(line);
+
+      final isStrongTotal = _totalStrongRegex.hasMatch(keywordLine) &&
+          !_totalExcludeRegex.hasMatch(keywordLine);
+      final hasAmountLabel = _amountLabelRegex.hasMatch(keywordLine);
+      final hasCurrency = _currencyLineRegex.hasMatch(keywordLine);
+      final looksLikePhone = _lineLooksLikePhoneNumber(line);
+
+      if (looksLikePhone && !isStrongTotal && !hasAmountLabel && !hasCurrency) {
+        continue;
+      }
+
+      if (amounts.isEmpty &&
+          (isStrongTotal || hasAmountLabel || hasCurrency) &&
+          i + 1 < lines.length) {
+        final nextLine = lines[i + 1];
+        final nextAmounts = _extractAmountsFromLine(nextLine);
+        final boost = isStrongTotal
+            ? 40
+            : hasAmountLabel
+                ? 25
+                : 15;
+        for (final value in nextAmounts) {
+          if (value <= 0) continue;
+          candidates.add(_AmountCandidate(
+            value: value,
+            lineIndex: i + 1,
+            score: lineScore + boost,
+          ));
+        }
+        continue;
+      }
+
+      if (amounts.isNotEmpty && isStrongTotal) {
+        amounts = [amounts.last];
+      }
+
+      for (final value in amounts) {
+        if (value <= 0) continue;
+        candidates.add(_AmountCandidate(
+          value: value,
+          lineIndex: i,
+          score: lineScore +
+              (isStrongTotal ? 30 : 0) +
+              (hasAmountLabel ? 8 : 0) +
+              (hasCurrency ? 6 : 0),
+        ));
+      }
+    }
+
+    return candidates;
+  }
+
+  int _scoreAmountLine(
+    String line,
+    String lower,
+    String keywordLine,
+    int index,
+    int totalLines,
+  ) {
+    var score = 0;
+    if (_totalStrongRegex.hasMatch(keywordLine) &&
+        !_totalExcludeRegex.hasMatch(keywordLine)) {
+      score += 60;
+    }
+    if (_totalWeakRegex.hasMatch(keywordLine)) score += 15;
+    if (_totalExcludeRegex.hasMatch(keywordLine)) score -= 25;
+    if (_metaLineRegex.hasMatch(lower)) score -= 25;
+    if (_lineLooksLikeDateOnly(line, lower)) score -= 20;
+    if (_lineLooksLikePhoneNumber(line)) score -= 25;
+
+    if (totalLines > 1) {
+      final position = index / (totalLines - 1);
+      score += (position * 10).round();
+    }
+
+    return score;
+  }
+
+  bool _lineLooksLikeDateOnly(String line, String lower) {
+    if (lower.contains('date') || lower.contains('time')) return true;
+    if (_numericDateRegex.hasMatch(line)) return true;
+    if (_monthNameRegex.hasMatch(line)) return true;
+    return false;
+  }
+
+  bool _lineLooksLikePhoneNumber(String line) {
+    final digits = line.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 10 && digits.length <= 13) {
+      return true;
+    }
+    return false;
+  }
+
+  List<double> _extractAmountsFromLine(String line) {
+    final sanitized = line.replaceAll('\u00A0', ' ');
+    final matches = _amountTokenRegex.allMatches(sanitized);
+    final values = <double>[];
+    for (final match in matches) {
+      final token = match.group(0) ?? '';
+      if (_looksLikeLongId(token)) continue;
+      final parsed = _parseAmount(token);
+      if (parsed != null) values.add(parsed);
+    }
+    return values;
+  }
+
+  bool _looksLikeLongId(String token) {
+    final cleaned = token.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.length >= 10 && !token.contains('.') && !token.contains(',')) {
+      return true;
+    }
+    return false;
+  }
+
   double? _parseAmount(String value) {
-    final cleaned = value.replaceAll(',', '');
-    return double.tryParse(cleaned);
+    var cleaned = value.trim();
+    if (cleaned.isEmpty) return null;
+
+    var isNegative = false;
+    if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
+      isNegative = true;
+      cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+
+    cleaned = _normalizeNumericToken(cleaned);
+    cleaned = cleaned.replaceAll(RegExp(r'[^0-9,\.\-]'), '');
+    if (cleaned.isEmpty) return null;
+
+    cleaned = _normalizeSeparators(cleaned);
+    if (cleaned.isEmpty) return null;
+
+    final parsed = double.tryParse(cleaned);
+    if (parsed == null) return null;
+    return isNegative ? -parsed : parsed;
+  }
+
+  String _normalizeNumericToken(String token) {
+    final hasDigit = RegExp(r'\d').hasMatch(token);
+    if (!hasDigit) return token;
+    var normalized = token
+        .replaceAll('O', '0')
+        .replaceAll('o', '0')
+        .replaceAll('I', '1')
+        .replaceAll('l', '1')
+        .replaceAll('L', '1');
+    normalized = normalized.replaceAll(' ', '');
+    return normalized;
+  }
+
+  String _normalizeForKeywords(String text) {
+    return text
+        .replaceAll('0', 'o')
+        .replaceAll('1', 'l')
+        .replaceAll('5', 's');
+  }
+
+  String _normalizeSeparators(String token) {
+    var value = token;
+    final hasComma = value.contains(',');
+    final hasDot = value.contains('.');
+
+    if (hasComma && hasDot) {
+      if (value.lastIndexOf(',') > value.lastIndexOf('.')) {
+        value = value.replaceAll('.', '');
+        value = value.replaceAll(',', '.');
+      } else {
+        value = value.replaceAll(',', '');
+      }
+    } else if (hasComma) {
+      final last = value.lastIndexOf(',');
+      final digitsAfter = value.length - last - 1;
+      if (digitsAfter == 2) {
+        value = value.replaceAll(',', '.');
+      } else {
+        value = value.replaceAll(',', '');
+      }
+    } else if (hasDot) {
+      final last = value.lastIndexOf('.');
+      final digitsAfter = value.length - last - 1;
+      if (digitsAfter == 0) {
+        value = value.substring(0, value.length - 1);
+      } else if (value.indexOf('.') != last) {
+        final parts = value.split('.');
+        final decimal = parts.removeLast();
+        value = parts.join('') + '.' + decimal;
+      }
+    }
+
+    value = value.replaceAll(RegExp(r'[^0-9.\-]'), '');
+    if (value.indexOf('-') > 0) {
+      value = value.replaceAll('-', '');
+    }
+    return value;
   }
 }
 
+class _AmountCandidate {
+  final double value;
+  final int lineIndex;
+  final int score;
 
+  const _AmountCandidate({
+    required this.value,
+    required this.lineIndex,
+    required this.score,
+  });
+}
+
+class _ParsedTime {
+  final int hour;
+  final int minute;
+  final int second;
+
+  const _ParsedTime({
+    required this.hour,
+    required this.minute,
+    required this.second,
+  });
+}

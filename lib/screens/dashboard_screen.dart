@@ -73,7 +73,7 @@ class DashboardScreen extends StatelessWidget {
     final quickItems = [
       _QuickItem(
         label: 'Transactions',
-        value: monthTransactions.length.toString(),
+        value: transactions.length.toString(),
         icon: Icons.receipt_long_rounded,
         color: colorScheme.primary,
         onTap: () {

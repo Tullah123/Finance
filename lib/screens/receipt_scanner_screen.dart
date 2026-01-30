@@ -10,7 +10,7 @@ import '../services/receipt_scanner_service.dart';
 import '../utils/constants.dart';
 
 class ReceiptScannerScreen extends StatefulWidget {
-  final Function(Transaction) onSave;
+  final Future<void> Function(Transaction) onSave;
 
   const ReceiptScannerScreen({
     Key? key,
@@ -803,7 +803,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     }
   }
 
-  void _saveTransaction() {
+  Future<void> _saveTransaction() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -846,7 +846,8 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       classificationReason: reason,
     );
 
-    widget.onSave(transaction);
+    await widget.onSave(transaction);
+    if (!mounted) return;
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(

@@ -71,23 +71,24 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     final maxWidth = AppLayout.maxContentWidth(context);
 
     final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final tomorrowStart = todayStart.add(const Duration(days: 1));
+    final yesterdayStart = todayStart.subtract(const Duration(days: 1));
+
     final todayTransactions = _filteredTransactions.where((t) {
-      return t.date.year == now.year &&
-          t.date.month == now.month &&
-          t.date.day == now.day;
+      return !t.date.isBefore(todayStart) && t.date.isBefore(tomorrowStart);
     }).toList();
 
     final yesterdayTransactions = _filteredTransactions.where((t) {
-      final yesterday = now.subtract(Duration(days: 1));
-      return t.date.year == yesterday.year &&
-          t.date.month == yesterday.month &&
-          t.date.day == yesterday.day;
+      return !t.date.isBefore(yesterdayStart) && t.date.isBefore(todayStart);
+    }).toList();
+
+    final futureTransactions = _filteredTransactions.where((t) {
+      return !t.date.isBefore(tomorrowStart);
     }).toList();
 
     final olderTransactions = _filteredTransactions.where((t) {
-      final yesterday = now.subtract(Duration(days: 1));
-      return t.date
-          .isBefore(DateTime(yesterday.year, yesterday.month, yesterday.day));
+      return t.date.isBefore(yesterdayStart);
     }).toList();
 
     return Scaffold(
@@ -112,7 +113,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              'Transactions',
+                              _filterType == 'all'
+                                  ? 'Transactions (${widget.transactions.length})'
+                                  : 'Transactions (${_filteredTransactions.length}/${widget.transactions.length})',
                               style: textTheme.titleLarge,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -184,8 +187,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               Container(
                                 padding: EdgeInsets.all(cardPad + 6),
                                 decoration: BoxDecoration(
-                                  color:
-                                      colorScheme.primary.withOpacity(0.08),
+                                  color: colorScheme.primary.withOpacity(0.08),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -214,6 +216,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             vertical: sectionGap,
                           ),
                           children: [
+                            if (futureTransactions.isNotEmpty) ...[
+                              _buildSectionHeader('Upcoming'),
+                              ...futureTransactions
+                                  .map((t) => _buildTransactionCard(t)),
+                              SizedBox(height: itemGap),
+                            ],
                             if (todayTransactions.isNotEmpty) ...[
                               _buildSectionHeader('Today'),
                               ...todayTransactions
@@ -343,7 +351,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${transaction.category} â€¢ ${DateFormat('hh:mm a').format(transaction.date)}',
+                        '${transaction.category}  ${DateFormat('hh:mm a').format(transaction.date)}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[500],
@@ -437,8 +445,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             color: isSelected ? primary : Colors.black87,
           ),
         ),
-        trailing:
-            isSelected ? Icon(Icons.check_circle, color: primary) : null,
+        trailing: isSelected ? Icon(Icons.check_circle, color: primary) : null,
         onTap: () {
           setState(() {
             _sortBy = value;
@@ -511,8 +518,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             color: isSelected ? primary : Colors.black87,
           ),
         ),
-        trailing:
-            isSelected ? Icon(Icons.check_circle, color: primary) : null,
+        trailing: isSelected ? Icon(Icons.check_circle, color: primary) : null,
         onTap: () {
           setState(() {
             _filterType = value;
@@ -888,5 +894,3 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 }
-
-
