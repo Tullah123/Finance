@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/data_service.dart';
 import '../models/transaction.dart';
 import '../models/budget.dart';
@@ -11,6 +11,7 @@ import 'goals_screen.dart';
 import 'reports_screen.dart';
 import 'reminders_screen.dart';
 
+/// Main shell with bottom navigation and swipeable pages.
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
 
@@ -21,6 +22,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final DataService _dataService = DataService();
+  late final PageController _pageController;
   List<Transaction> _transactions = [];
   List<Budget> _budgets = [];
   List<Goal> _goals = [];
@@ -30,9 +32,17 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // Load all persisted data for tabs.
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final transactions = await _dataService.loadTransactions();
@@ -48,14 +58,21 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  // Sync bottom nav taps with PageView.
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (_isLoading) {
       return Scaffold(
         body: Center(
@@ -64,6 +81,7 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
+    // Tab pages for the bottom navigation.
     final screens = [
       DashboardScreen(
         transactions: _transactions,
@@ -102,15 +120,32 @@ class _MainScreenState extends State<MainScreen> {
           setState(() {
             _selectedIndex = 0;
           });
+          if (_pageController.hasClients) {
+            _pageController.animateToPage(
+              0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+            );
+          }
           return false;
         }
         return true;
       },
       child: Scaffold(
-        body: screens[_selectedIndex],
+        // Swipe left/right to change tab pages.
+        body: PageView(
+          controller: _pageController,
+          physics: const BouncingScrollPhysics(),
+          onPageChanged: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          children: screens,
+        ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -144,6 +179,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
     final isCompact = MediaQuery.sizeOf(context).width < 360;
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       child: AnimatedContainer(
@@ -158,7 +194,7 @@ class _MainScreenState extends State<MainScreen> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF1B998B).withOpacity(0.1)
+              ? colorScheme.primary.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
         ),
@@ -167,7 +203,9 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF1B998B) : Colors.grey,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withOpacity(0.5),
               size: isSelected ? (isCompact ? 24 : 28) : (isCompact ? 22 : 24),
             ),
             if (isSelected) ...[
@@ -175,7 +213,7 @@ class _MainScreenState extends State<MainScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: const Color(0xFF1B998B),
+                  color: colorScheme.primary,
                   fontSize: isCompact ? 9 : 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -187,3 +225,4 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
+

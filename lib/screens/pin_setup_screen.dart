@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../utils/layout.dart';
 
+/// PIN setup screen used from Settings.
 class PinSetupScreen extends StatefulWidget {
   const PinSetupScreen({Key? key}) : super(key: key);
 
@@ -20,6 +21,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     super.dispose();
   }
 
+  // Validate PIN/confirm and return to caller.
   void _savePin() {
     final pin = _pinController.text.trim();
     final confirm = _confirmController.text.trim();
@@ -42,6 +44,10 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final maxWidth = AppLayout.maxContentWidth(context);
@@ -69,7 +75,9 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'This PIN will be required to unlock the app.',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: mutedText,
+                    ),
                   ),
                   SizedBox(height: sectionGap),
                   TextField(
@@ -112,3 +120,4 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
     );
   }
 }
+

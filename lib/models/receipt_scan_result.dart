@@ -1,4 +1,5 @@
-﻿class ReceiptScanResult {
+/// Receipt OCR result used to prefill the transaction form.
+class ReceiptScanResult {
   final String merchant;
   final DateTime date;
   final double total;
@@ -29,7 +30,9 @@
     this.error,
   });
 
+  // Quick flag for showing scan errors in UI.
   bool get hasError => error != null && error!.isNotEmpty;
 }
+
 
 

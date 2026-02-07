@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +9,7 @@ import '../services/app_lock_service.dart';
 import '../services/receipt_scanner_service.dart';
 import '../utils/constants.dart';
 
+/// Receipt scanner flow: capture, OCR, review, and save.
 class ReceiptScannerScreen extends StatefulWidget {
   final Future<void> Function(Transaction) onSave;
 
@@ -77,19 +78,20 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F8),
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
         ),
         title: Text(
           'Scan Receipt',
-          style: TextStyle(
-            color: Colors.black87,
+          style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -102,7 +104,10 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     );
   }
 
+  // Loading UI while OCR is running.
   Widget _buildLoadingView() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -110,30 +115,27 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
           Container(
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B998B).withOpacity(0.1),
+              color: colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: CircularProgressIndicator(
               valueColor:
-                  AlwaysStoppedAnimation<Color>(const Color(0xFF1B998B)),
+                  AlwaysStoppedAnimation<Color>(colorScheme.primary),
               strokeWidth: 4,
             ),
           ),
           const SizedBox(height: 30),
           Text(
             'Processing Receipt...',
-            style: TextStyle(
-              fontSize: 20,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             'Extracting information using OCR',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],
@@ -141,7 +143,10 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     );
   }
 
+  // Choose source: camera, gallery, or PDF.
   Widget _buildScanOptionsView() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -153,14 +158,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF1B998B),
-                    const Color(0xFF14786C),
+                    colorScheme.primary,
+                    colorScheme.primary.withOpacity(0.85),
                   ],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1B998B).withOpacity(0.3),
+                    color: colorScheme.primary.withOpacity(0.3),
                     blurRadius: 20,
                     offset: Offset(0, 10),
                   ),
@@ -175,19 +180,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             const SizedBox(height: 15), //old 40
             Text(
               'Scan Your Receipt',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              style: textTheme.titleLarge,
             ),
             const SizedBox(height: 8), //old 15
             Text(
               'Use camera, gallery, or PDF to\nextract transaction details',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey[600],
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
                 height: 1.5,
               ),
             ),
@@ -206,7 +206,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             _buildScanButton(
               'Choose from Gallery',
               Icons.photo_library_rounded,
-              const Color(0xFF1B998B),
+              colorScheme.primary,
               _scanFromGallery,
             ),
             const SizedBox(height: 15),
@@ -271,9 +271,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     );
   }
 
+  // Review and edit OCR results before saving.
   Widget _buildReviewView() {
     final result = _scanResult!;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     return Form(
       key: _formKey,
       child: ListView(
@@ -288,7 +293,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -339,7 +344,9 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
               children: [
                 Text(
                   'Auto classified as ${result.type.toUpperCase()} (${result.classificationReason})',
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: mutedText,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -496,14 +503,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF4F7F8),
+                        color: colorScheme.background,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.calendar_today_rounded,
-                            color: const Color(0xFF1B998B),
+                            color: colorScheme.primary,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -513,7 +520,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -530,14 +537,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF4F7F8),
+                        color: colorScheme.background,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.access_time_rounded,
-                            color: const Color(0xFF1B998B),
+                            color: colorScheme.primary,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -547,7 +554,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -578,14 +585,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF1B998B),
-                  const Color(0xFF14786C),
+                  colorScheme.primary,
+                  colorScheme.primary.withOpacity(0.85),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1B998B).withOpacity(0.3),
+                  color: colorScheme.primary.withOpacity(0.3),
                   blurRadius: 15,
                   offset: Offset(0, 8),
                 ),
@@ -626,10 +633,12 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     required String title,
     required Widget child,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -644,10 +653,8 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 16,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 15),
@@ -664,6 +671,8 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     required Color color,
   }) {
     final isSelected = _type == value;
+    final colorScheme = Theme.of(context).colorScheme;
+    final mutedText = colorScheme.onSurface.withOpacity(0.6);
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -676,7 +685,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
         duration: Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : const Color(0xFFF4F7F8),
+          color: isSelected ? color.withOpacity(0.1) : colorScheme.background,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: isSelected ? color : Colors.transparent,
@@ -687,7 +696,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? color : Colors.grey[600],
+              color: isSelected ? color : mutedText,
               size: 32,
             ),
             const SizedBox(height: 8),
@@ -696,7 +705,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? color : Colors.grey[600],
+                color: isSelected ? color : mutedText,
               ),
             ),
           ],
@@ -735,6 +744,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     _applyScanResult(result);
   }
 
+  // Populate form controllers from OCR output.
   void _applyScanResult(ReceiptScanResult result) {
     setState(() {
       _scanResult = result;
@@ -757,19 +767,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF1B998B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (date != null) {
       setState(() {
@@ -782,19 +779,6 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     final time = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF1B998B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (time != null) {
       setState(() {
@@ -803,6 +787,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     }
   }
 
+  // Build a Transaction from reviewed fields and persist it.
   Future<void> _saveTransaction() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -868,3 +853,4 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     );
   }
 }
+

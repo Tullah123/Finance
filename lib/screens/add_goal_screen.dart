@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/goal.dart';
 import '../utils/layout.dart';
 
+/// Add/Edit goal form.
 class AddGoalScreen extends StatefulWidget {
   final Goal? goal;
   final Function(Goal) onSave;
@@ -56,6 +57,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
@@ -90,7 +95,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -105,10 +110,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         children: [
                           Text(
                             'Goal Title',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -117,25 +120,27 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                             style: TextStyle(fontSize: 16),
                             decoration: InputDecoration(
                               hintText: 'e.g., Buy a car, Save for vacation',
-                              hintStyle: TextStyle(color: Colors.grey[400]),
+                              hintStyle: TextStyle(color: mutedText),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide:
+                                    BorderSide(color: colorScheme.outline),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide:
+                                    BorderSide(color: colorScheme.outline),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF1B998B),
+                                  color: colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
                               prefixIcon: Icon(
                                 Icons.flag_rounded,
-                                color: const Color(0xFF1B998B),
+                                color: colorScheme.primary,
                               ),
                             ),
                             validator: (value) {
@@ -154,7 +159,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -169,10 +174,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         children: [
                           Text(
                             'Target Amount',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -183,20 +186,20 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                             style: TextStyle(
                               fontSize: isCompact ? 26 : 32,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1B998B),
+                              color: colorScheme.primary,
                             ),
                             decoration: InputDecoration(
                               prefixText: 'PKR ',
                               prefixStyle: TextStyle(
                                 fontSize: isCompact ? 26 : 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
+                                color: mutedText,
                               ),
                               hintText: '0.00',
                               hintStyle: TextStyle(
                                 fontSize: isCompact ? 26 : 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[300],
+                                color: colorScheme.outline.withOpacity(0.4),
                               ),
                               border: InputBorder.none,
                             ),
@@ -222,7 +225,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -237,10 +240,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         children: [
                           Text(
                             'Current Savings',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -258,13 +259,13 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                               prefixStyle: TextStyle(
                                 fontSize: isCompact ? 20 : 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
+                                color: mutedText,
                               ),
                               hintText: '0.00',
                               hintStyle: TextStyle(
                                 fontSize: isCompact ? 20 : 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[300],
+                                color: colorScheme.outline.withOpacity(0.4),
                               ),
                               border: InputBorder.none,
                             ),
@@ -290,7 +291,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -305,10 +306,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         children: [
                           Text(
                             'Deadline',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -318,14 +317,14 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF4F7F8),
+                                color: colorScheme.background,
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.calendar_today_rounded,
-                                    color: const Color(0xFF1B998B),
+                                    color: colorScheme.primary,
                                     size: 24,
                                   ),
                                   SizedBox(width: itemGap),
@@ -336,7 +335,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: colorScheme.onSurface,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -344,7 +343,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                                   ),
                                   Icon(
                                     Icons.arrow_forward_ios_rounded,
-                                    color: Colors.grey[400],
+                                    color: colorScheme.onSurface.withOpacity(0.45),
                                     size: 16,
                                   ),
                                 ],
@@ -360,7 +359,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -375,10 +374,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                         children: [
                           Text(
                             'Description (Optional)',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -388,19 +385,21 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                             style: TextStyle(fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Add any notes about this goal...',
-                              hintStyle: TextStyle(color: Colors.grey[400]),
+                              hintStyle: TextStyle(color: mutedText),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide:
+                                    BorderSide(color: colorScheme.outline),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide:
+                                    BorderSide(color: colorScheme.outline),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(15),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFF1B998B),
+                                  color: colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
@@ -416,14 +415,14 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF1B998B),
-                            const Color(0xFF14786C),
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.85),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1B998B).withOpacity(0.3),
+                            color: colorScheme.primary.withOpacity(0.3),
                             blurRadius: 15,
                             offset: Offset(0, 8),
                           ),
@@ -464,25 +463,13 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     );
   }
 
+  // Pick goal deadline.
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,
       initialDate: _deadline,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF1B998B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (date != null) {
       setState(() {
@@ -491,6 +478,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     }
   }
 
+  // Validate and save goal data.
   void _saveGoal() {
     if (_formKey.currentState!.validate()) {
       final goal = Goal(
@@ -531,5 +519,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
     }
   }
 }
+
 
 

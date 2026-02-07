@@ -12,6 +12,7 @@ import '../screens/transactions_screen.dart';
 import '../screens/budgets_screen.dart';
 import '../screens/settings_screen.dart';
 
+/// Dashboard overview with balances, quick actions, and recent activity.
 class DashboardScreen extends StatelessWidget {
   final List<Transaction> transactions;
   final List<Budget> budgets;
@@ -39,6 +40,7 @@ class DashboardScreen extends StatelessWidget {
     final maxWidth = AppLayout.maxContentWidth(context);
     final isCompact = MediaQuery.sizeOf(context).width < 360;
 
+    // Aggregate totals for overall balance.
     final totalIncome = transactions
         .where((t) => t.type == 'income')
         .fold(0.0, (sum, t) => sum + t.amount);
@@ -50,6 +52,7 @@ class DashboardScreen extends StatelessWidget {
     final totalBalance = totalIncome - totalExpense;
 
     final now = DateTime.now();
+    // Filter to current month for summary cards.
     final monthTransactions = transactions.where((t) {
       return t.date.year == now.year && t.date.month == now.month;
     }).toList();
@@ -70,6 +73,7 @@ class DashboardScreen extends StatelessWidget {
       ..sort((a, b) => b.date.compareTo(a.date));
     final recentTransactions = sortedTransactions.take(5).toList();
 
+    // Quick navigation tiles.
     final quickItems = [
       _QuickItem(
         label: 'Transactions',
@@ -156,6 +160,7 @@ class DashboardScreen extends StatelessWidget {
     //
     final quickCardAspect = quickGridCount >= 3 ? 1.0 : 1.25;
 
+    // Main dashboard layout.
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
@@ -191,13 +196,26 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              final cleared = await Navigator.push<bool>(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const SettingsScreen(),
                                 ),
                               );
+                              if (cleared == true) {
+                                onRefresh();
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('All data erased.'),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.all(10),
@@ -494,11 +512,12 @@ class DashboardScreen extends StatelessWidget {
     final itemGap = AppLayout.itemGap(context);
     final cardPad = AppLayout.cardPadding(context);
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: EdgeInsets.all(cardPad - 2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -557,9 +576,10 @@ class DashboardScreen extends StatelessWidget {
     final cardPad = AppLayout.cardPadding(context);
     final itemGap = AppLayout.itemGap(context);
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: Colors.white,
+      color: colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -613,11 +633,12 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildEmptyState(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final cardPad = AppLayout.cardPadding(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: EdgeInsets.all(cardPad + 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -651,11 +672,12 @@ class DashboardScreen extends StatelessWidget {
     final itemGap = AppLayout.itemGap(context);
     final cardPad = AppLayout.cardPadding(context);
     final dateLabel = DateFormat('MMM dd').format(transaction.date);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -725,3 +747,4 @@ class _QuickItem {
     required this.onTap,
   });
 }
+

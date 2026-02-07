@@ -1,4 +1,5 @@
-﻿class Budget {
+/// Budget model used for storing category limits per month.
+class Budget {
   String id;
   String category;
   double limit;
@@ -11,6 +12,7 @@
     required this.month,
   });
 
+  // Serialize for local storage.
   Map<String, dynamic> toJson() => {
         'id': id,
         'category': category,
@@ -18,6 +20,7 @@
         'month': month.toIso8601String(),
       };
 
+  // Deserialize from local storage.
   factory Budget.fromJson(Map<String, dynamic> json) => Budget(
         id: json['id'],
         category: json['category'],
@@ -25,5 +28,6 @@
         month: DateTime.parse(json['month']),
       );
 }
+
 
 

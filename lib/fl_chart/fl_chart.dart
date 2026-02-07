@@ -1,4 +1,5 @@
-﻿
+/// Placeholder file (not used by app code). Kept for reference.
+
 /*
 allprojects {
     repositories {
@@ -22,4 +23,5 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 */
+
 

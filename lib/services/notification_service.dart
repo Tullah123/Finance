@@ -1,4 +1,4 @@
-/*
+﻿/*
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 // import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -8,6 +8,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/reminder.dart';
 
+/// Schedules and manages local reminder notifications.
 class NotificationService {
   NotificationService._();
 
@@ -20,6 +21,7 @@ class NotificationService {
 
   String get timeZoneName => _timeZoneName;
 
+  // Initialize plugin + notification channel + timezone.
   Future<void> init() async {
     if (_initialized) return;
     const androidSettings =
@@ -39,7 +41,7 @@ class NotificationService {
     tzdata.initializeTimeZones();
     try {
       final tzInfo = await FlutterTimezone.getLocalTimezone();
-      final name = tzInfo.identifier; // ✅ correct
+      final name = tzInfo.identifier; // OK: correct
 
       tz.setLocalLocation(tz.getLocation(name));
       _timeZoneName = name;
@@ -51,6 +53,7 @@ class NotificationService {
     _initialized = true;
   }
 
+  // Request notification permissions from OS.
   Future<void> requestPermissions() async {
     await init();
 
@@ -66,6 +69,7 @@ class NotificationService {
     await ios?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
+  // Schedule reminder notifications (near, due, post, extra alerts).
   Future<void> scheduleReminder(Reminder reminder) async {
     await init();
     if (!reminder.isEnabled || reminder.isCompleted) return;
@@ -127,6 +131,7 @@ class NotificationService {
     }
   }
 
+  // Cancel scheduled notifications for a reminder ID.
   Future<void> cancelReminder(String reminderId) async {
     await init();
     final baseId = _baseId(reminderId);
@@ -135,6 +140,7 @@ class NotificationService {
     await _plugin.cancel(baseId + 3);
   }
 
+  // Build platform-specific notification details.
   NotificationDetails _notificationDetails() {
     const android = AndroidNotificationDetails(
       'reminders',
@@ -147,10 +153,12 @@ class NotificationService {
     return const NotificationDetails(android: android, iOS: ios);
   }
 
+  // Stable ID base for notification grouping.
   int _baseId(String id) {
     return _stableHash(id) & 0x7fffffff;
   }
 
+  // Deterministic hash for IDs across sessions.
   int _stableHash(String value) {
     var hash = 0x811c9dc5;
     for (final unit in value.codeUnits) {
@@ -172,6 +180,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/reminder.dart';
 
+/// Schedules and manages local reminder notifications.
 class NotificationService {
   NotificationService._();
 
@@ -189,6 +198,7 @@ class NotificationService {
 
   String get timeZoneName => _timeZoneName;
 
+  // Initialize plugin + notification channel + timezone.
   Future<void> init() async {
     if (_initialized) return;
 
@@ -240,6 +250,7 @@ class NotificationService {
     _initialized = true;
   }
 
+  // Request notification permissions from OS.
   Future<void> requestPermissions() async {
     await init();
 
@@ -254,6 +265,7 @@ class NotificationService {
     await ios?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
+  // Schedule reminder notifications (near, due, post, extra alerts).
   Future<void> scheduleReminder(Reminder reminder) async {
     await init();
     if (!reminder.isEnabled || reminder.isCompleted) return;
@@ -326,6 +338,7 @@ class NotificationService {
     }
   }
 
+  // Cancel scheduled notifications for a reminder ID.
   Future<void> cancelReminder(String reminderId, {int extraCount = 0}) async {
     await init();
     final baseId = _baseId(reminderId);
@@ -337,6 +350,7 @@ class NotificationService {
     }
   }
 
+  // Cancel notifications using reminder model.
   Future<void> cancelReminderFor(Reminder reminder) async {
     await cancelReminder(
       reminder.id,
@@ -344,6 +358,7 @@ class NotificationService {
     );
   }
 
+  // Build platform-specific notification details.
   NotificationDetails _notificationDetails() {
     const android = AndroidNotificationDetails(
       _channelId,
@@ -366,6 +381,7 @@ class NotificationService {
     return const NotificationDetails(android: android, iOS: ios);
   }
 
+  // Resolve timezone for a reminder (UTC or local).
   tz.Location _locationForReminder(Reminder reminder) {
     if (reminder.timeZone == 'UTC') {
       return tz.UTC;
@@ -377,16 +393,19 @@ class NotificationService {
     }
   }
 
+  // Format a human-readable time label.
   String _formatLabel(Reminder reminder, DateTime utc) {
     final display =
         reminder.timeZone == 'UTC' ? utc.toUtc() : utc.toLocal();
     return DateFormat('MMM dd, hh:mm a').format(display);
   }
 
+  // Stable ID base for notification grouping.
   int _baseId(String id) {
     return _stableHash(id) & 0x7fffffff;
   }
 
+  // Deterministic hash for IDs across sessions.
   int _stableHash(String value) {
     var hash = 0x811c9dc5;
     for (final unit in value.codeUnits) {
@@ -396,3 +415,6 @@ class NotificationService {
     return hash;
   }
 }
+
+
+

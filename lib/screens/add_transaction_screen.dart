@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../utils/constants.dart';
 import '../utils/layout.dart';
 //import 'package:personal_finance_tracker/screens/receipt_scanner_screen.dart';
 
+/// Add/Edit transaction form.
 class AddTransactionScreen extends StatefulWidget {
   final Transaction? transaction;
   final Function(Transaction) onSave;
@@ -72,6 +73,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     super.dispose();
   }
 
+  // Categories depend on income/expense type.
   List<String> get _categories {
     return _type == 'expense'
         ? AppConstants.expenseCategories
@@ -673,6 +675,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
+  // Pick transaction date.
   Future<void> _selectDate() async {
     final date = await showDatePicker(
       context: context,
@@ -700,6 +703,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     }
   }
 
+  // Pick transaction time.
   Future<void> _selectTime() async {
     final time = await showTimePicker(
       context: context,
@@ -725,6 +729,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     }
   }
 
+  // Validate and save transaction data.
   void _saveTransaction() {
     if (_formKey.currentState!.validate()) {
       final dateTime = DateTime(
@@ -774,5 +779,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     }
   }
 }
+
 
 

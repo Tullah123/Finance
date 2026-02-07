@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/app_lock_service.dart';
 import '../utils/layout.dart';
 
+/// Lock screen for PIN/biometric authentication.
 class AppLockScreen extends StatefulWidget {
   final VoidCallback onUnlocked;
   final bool allowCancel;
@@ -38,6 +39,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     super.dispose();
   }
 
+  // Load lock settings and biometrics availability.
   Future<void> _loadState() async {
     final settings = await _lockService.loadSettings();
     final biometricsAvailable = await _lockService.isBiometricsAvailable();
@@ -55,6 +57,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
   }
 
+  // Trigger biometric authentication.
   Future<void> _authenticateWithBiometrics() async {
     if (_isAuthenticating) return;
     setState(() => _isAuthenticating = true);
@@ -69,6 +72,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
   }
 
+  // Validate PIN and unlock app.
   Future<void> _unlockWithPin() async {
     final pin = _pinController.text.trim();
     if (pin.length < 4) {
@@ -94,6 +98,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final maxWidth = AppLayout.maxContentWidth(context);
@@ -128,28 +136,26 @@ class _AppLockScreenState extends State<AppLockScreen> {
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B998B).withOpacity(0.12),
+                        color: colorScheme.primary.withOpacity(0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_rounded,
                         size: 48,
-                        color: Color(0xFF1B998B),
+                        color: colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'Unlock your account',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      style: textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Use biometrics or your PIN to continue.',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: mutedText,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: sectionGap),
@@ -210,3 +216,4 @@ class _AppLockScreenState extends State<AppLockScreen> {
     );
   }
 }
+

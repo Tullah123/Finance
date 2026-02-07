@@ -4,6 +4,7 @@ import '../models/budget.dart';
 import '../utils/constants.dart';
 import '../utils/layout.dart';
 
+/// Add/Edit budget form.
 class AddBudgetScreen extends StatefulWidget {
   final Budget? budget;
   final DateTime selectedMonth;
@@ -46,10 +47,15 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     super.dispose();
   }
 
+  // Available expense categories.
   List<String> get _categories => AppConstants.expenseCategories;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
@@ -94,7 +100,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -109,10 +115,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         children: [
                           Text(
                             'Select Category',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           SizedBox(height: sectionGap),
@@ -143,7 +147,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                     color: isSelected
                                         ? AppConstants.getCategoryColor(category)
                                             .withOpacity(0.1)
-                                        : const Color(0xFFF4F7F8),
+                                        : colorScheme.background,
                                     borderRadius: BorderRadius.circular(15),
                                     border: Border.all(
                                       color: isSelected
@@ -161,7 +165,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                         color: isSelected
                                             ? AppConstants.getCategoryColor(
                                                 category)
-                                            : Colors.grey[600],
+                                            : mutedText,
                                         size: categoryIconSize,
                                       ),
                                       SizedBox(height: categoryLabelGap),
@@ -176,7 +180,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                           color: isSelected
                                               ? AppConstants.getCategoryColor(
                                                   category)
-                                              : Colors.grey[600],
+                                              : mutedText,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -196,7 +200,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -211,10 +215,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         children: [
                           Text(
                             'Budget Limit',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -225,20 +227,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                             style: TextStyle(
                               fontSize: isCompact ? 26 : 32,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1B998B),
+                              color: colorScheme.primary,
                             ),
                             decoration: InputDecoration(
                               prefixText: 'PKR ',
                               prefixStyle: TextStyle(
                                 fontSize: isCompact ? 26 : 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
+                                color: mutedText,
                               ),
                               hintText: '0.00',
                               hintStyle: TextStyle(
                                 fontSize: isCompact ? 26 : 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[300],
+                                color: colorScheme.outline.withOpacity(0.4),
                               ),
                               border: InputBorder.none,
                             ),
@@ -264,7 +266,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -279,10 +281,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         children: [
                           Text(
                             'Select Month',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -292,14 +292,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF4F7F8),
+                                color: colorScheme.background,
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.calendar_month_rounded,
-                                    color: const Color(0xFF1B998B),
+                                    color: colorScheme.primary,
                                     size: 24,
                                   ),
                                   SizedBox(width: itemGap),
@@ -310,7 +310,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: colorScheme.onSurface,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -318,7 +318,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                                   ),
                                   Icon(
                                     Icons.arrow_forward_ios_rounded,
-                                    color: Colors.grey[400],
+                                    color: colorScheme.onSurface.withOpacity(0.45),
                                     size: 16,
                                   ),
                                 ],
@@ -335,14 +335,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF1B998B),
-                            const Color(0xFF14786C),
+                            colorScheme.primary,
+                            colorScheme.primary.withOpacity(0.85),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1B998B).withOpacity(0.3),
+                            color: colorScheme.primary.withOpacity(0.3),
                             blurRadius: 15,
                             offset: Offset(0, 8),
                           ),
@@ -383,25 +383,13 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     );
   }
 
+  // Pick budget month.
   Future<void> _selectMonth() async {
     final date = await showDatePicker(
       context: context,
       initialDate: _selectedMonth,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF1B998B),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (date != null) {
       setState(() {
@@ -410,6 +398,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
   }
 
+  // Validate and save budget data.
   void _saveBudget() {
     if (_formKey.currentState!.validate()) {
       final budget = Budget(
@@ -447,5 +436,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
   }
 }
+
 
 

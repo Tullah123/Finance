@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/reminder.dart';
 import '../services/notification_service.dart';
 import '../utils/layout.dart';
 
+/// Add/Edit reminder form with schedule options.
 class AddReminderScreen extends StatefulWidget {
   final Reminder? reminder;
   final void Function(Reminder) onSave;
@@ -86,24 +87,13 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     super.dispose();
   }
 
+  // Pick expiry date.
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _expiryDate,
       firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  onPrimary: Colors.white,
-                  surface: Colors.white,
-                  onSurface: Colors.black87,
-                ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -112,22 +102,11 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     }
   }
 
+  // Pick expiry time.
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
       initialTime: _expiryTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  onPrimary: Colors.white,
-                  surface: Colors.white,
-                  onSurface: Colors.black87,
-                ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
@@ -136,6 +115,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     }
   }
 
+  // Add extra alert time entries.
   Future<void> _addExtraAlert() async {
     final pickedDate = await showDatePicker(
       context: context,
@@ -179,6 +159,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     });
   }
 
+  // Confirm and delete a reminder.
   Future<void> _confirmDelete() async {
     if (widget.onDelete == null) return;
     final shouldDelete = await showDialog<bool>(
@@ -213,6 +194,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     }
   }
 
+  // Validate and save reminder data.
   void _saveReminder() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -269,6 +251,10 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
@@ -276,7 +262,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     final themed = Theme.of(context);
-    final focusColor = const Color(0xFF1B998B);
+    final focusColor = colorScheme.primary;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -296,7 +282,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                 data: themed.copyWith(
                   inputDecorationTheme: InputDecorationTheme(
                     filled: true,
-                    fillColor: const Color(0xFFF4F7F8),
+                    fillColor: colorScheme.background,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 14,
@@ -336,7 +322,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       hPad,
                       sectionGap,
                       hPad,
-                      sectionGap + bottomInset + 24, // ✅ prevents overflow
+                      sectionGap + bottomInset + 24, // Prevents overflow on small screens.
                     ),
                     children: [
                       _buildSection(
@@ -389,7 +375,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       _buildSection(
                         title: 'Near Expiry',
                         child: DropdownButtonFormField<int>(
-                          isExpanded: true, // ✅ avoids horizontal overflow
+                          isExpanded: true, // Avoids horizontal overflow.
                           value: _nearOffsetMinutes,
                           items: _nearOptions
                               .map((option) => DropdownMenuItem<int>(
@@ -409,7 +395,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       _buildSection(
                         title: 'Post-expiry Follow-up',
                         child: DropdownButtonFormField<int>(
-                          isExpanded: true, // ✅ avoids horizontal overflow
+                          isExpanded: true, // Avoids horizontal overflow.
                           value: _postOffsetMinutes,
                           items: _postOptions
                               .map((option) => DropdownMenuItem<int>(
@@ -426,15 +412,15 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                         ),
                       ),
                       SizedBox(height: sectionGap),
-                      _buildSection(
-                        title: 'Additional Alerts',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_extraAlerts.isEmpty)
+                    _buildSection(
+                      title: 'Additional Alerts',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_extraAlerts.isEmpty)
                               Text(
                                 'No extra alerts added yet.',
-                                style: TextStyle(color: Colors.grey[600]),
+                                style: TextStyle(color: mutedText),
                               )
                             else
                               Column(
@@ -450,16 +436,16 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                                             vertical: 10,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF4F7F8),
+                                            color: colorScheme.background,
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
                                           child: Row(
                                             children: [
-                                              const Icon(
+                                              Icon(
                                                 Icons.notifications_active,
                                                 size: 18,
-                                                color: Color(0xFF1B998B),
+                                                color: colorScheme.primary,
                                               ),
                                               const SizedBox(width: 10),
                                               Expanded(
@@ -511,7 +497,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       ),
                       SizedBox(height: itemGap),
                       DropdownButtonFormField<String>(
-                        isExpanded: true, // ✅ avoids overflow
+                        isExpanded: true, // Avoids overflow.
                         value: _useUtc ? 'UTC' : 'local',
                         items: [
                           DropdownMenuItem(
@@ -576,10 +562,12 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   }
 
   Widget _buildSection({required String title, required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -594,10 +582,8 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 12),
@@ -612,35 +598,36 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F7F8),
+          color: colorScheme.background,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF1B998B)),
+            Icon(icon, color: colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
-              color: Colors.grey,
+              color: colorScheme.onSurface.withOpacity(0.45),
             ),
           ],
         ),
@@ -660,3 +647,5 @@ class _OffsetOption {
 
   const _OffsetOption(this.minutes, this.label);
 }
+
+

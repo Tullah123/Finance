@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+/// Shared app constants for categories and styling helpers.
 class AppConstants {
+  // Expense categories shown in the UI and reports.
   static const List<String> expenseCategories = [
     'Food & Dining',
     'Shopping',
@@ -13,6 +15,7 @@ class AppConstants {
     'Other',
   ];
 
+  // Income categories shown in the UI and reports.
   static const List<String> incomeCategories = [
     'Salary',
     'Freelance',
@@ -22,6 +25,7 @@ class AppConstants {
     'Other',
   ];
 
+  // Resolve a category name to a Material icon.
   static IconData getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'food & dining':
@@ -57,6 +61,7 @@ class AppConstants {
     }
   }
 
+  // Resolve a category name to a color used in charts/cards.
   static Color getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'food & dining':
@@ -92,5 +97,6 @@ class AppConstants {
     }
   }
 }
+
 
 
