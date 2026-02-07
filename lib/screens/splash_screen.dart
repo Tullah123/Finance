@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'app_entry_screen.dart';
 
+/// Splash screen with logo animation and timed navigation.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
 
@@ -10,9 +11,10 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+  //Needed for AnimationController
+  late AnimationController _controller; //control time
+  late Animation<double> _scaleAnimation; //control size
+  late Animation<double> _fadeAnimation; //control opticity
 
   @override
   void initState() {
@@ -30,17 +32,24 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
-    _controller.forward();
+    _controller.forward(); //Starts animation(Goes from 0 ? 1)
 
+    // After a short delay, move to the app entry flow.
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
+        //User cannot go back to splash
         context,
         PageRouteBuilder(
+          //Custom animations(Smooth UX)
+
           pageBuilder: (context, animation, secondaryAnimation) =>
               const AppEntryScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
+          //Fade effect between screens
+          //Uses same animation object
+
           transitionDuration: const Duration(milliseconds: 500),
         ),
       );
@@ -52,9 +61,12 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.dispose();
     super.dispose();
   }
+  //Prevents memory leaks
+  //Stops animation when screen removed
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -62,9 +74,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF1B998B),
-              const Color(0xFF14786C),
-              const Color(0xFF4B42BA),
+              colorScheme.primary,
+              colorScheme.primary.withOpacity(0.85),
+              colorScheme.primaryContainer,
             ],
           ),
         ),
@@ -79,13 +91,13 @@ class _SplashScreenState extends State<SplashScreen>
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: colorScheme.onPrimary.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.account_balance_wallet_rounded,
                       size: 100,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -94,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                       letterSpacing: 1.5,
                     ),
                   ),
@@ -103,13 +115,15 @@ class _SplashScreenState extends State<SplashScreen>
                     'Smart Money Management',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.9),
+                      color: colorScheme.onPrimary.withOpacity(0.9),
                       letterSpacing: 1.2,
                     ),
                   ),
                   const SizedBox(height: 50),
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    //Shows loading
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                     strokeWidth: 3,
                   ),
                 ],
@@ -121,5 +135,4 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
 

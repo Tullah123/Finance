@@ -1,5 +1,6 @@
 import 'dart:math';
 
+/// Parsed fields from raw OCR text.
 class ReceiptParseResult {
   final String merchant;
   final DateTime date;
@@ -18,6 +19,7 @@ class ReceiptParseResult {
   });
 }
 
+/// Heuristic parser for extracting receipt fields from OCR text.
 class ReceiptParser {
   static const List<String> _currencyTokens = [
     'PKR',
@@ -57,7 +59,7 @@ class ReceiptParser {
   );
 
   static final RegExp _totalStrongRegex = RegExp(
-    r'\b(grand total|total due|amount due|balance due|amount payable|net total|total amount|total)\b',
+    r'\b(grand\s*tot(?:al|ai|a1)|tot(?:al|ai|a1)|total\s*due|amount\s*due|balance\s*due|amount\s*payable|net\s*tot(?:al|ai|a1)|total\s*amount)\b',
     caseSensitive: false,
   );
 
@@ -115,6 +117,7 @@ class ReceiptParser {
     caseSensitive: false,
   );
 
+  // Main entry: parse merchant, date/time, totals, tax, currency, and payment.
   ReceiptParseResult parse(String rawText) {
     final lines = rawText
         .split('\n')
@@ -127,8 +130,8 @@ class ReceiptParser {
     final date = _extractDate(lines);
     final time = _extractTime(lines);
     final resolvedDate = _combineDateTime(date, time);
-    final total = _extractTotal(lines);
     final tax = _extractTax(lines);
+    final total = _extractTotal(lines, tax: tax);
     final paymentMethod = _extractPaymentMethod(rawText);
 
     return ReceiptParseResult(
@@ -141,6 +144,7 @@ class ReceiptParser {
     );
   }
 
+  // Detect currency token or symbol.
   String _extractCurrency(String text) {
     final upper = text.toUpperCase();
     if (RegExp(r'\bR\s*S\.?\b', caseSensitive: false).hasMatch(text)) {
@@ -159,6 +163,7 @@ class ReceiptParser {
     return 'PKR';
   }
 
+  // Guess merchant name from header lines and labels.
   String _extractMerchant(List<String> lines) {
     if (lines.isEmpty) return 'Unknown Merchant';
     final labeled = _extractMerchantFromLabels(lines);
@@ -251,6 +256,7 @@ class ReceiptParser {
     return true;
   }
 
+  // Find a plausible date in OCR lines.
   DateTime? _extractDate(List<String> lines) {
     for (final line in lines) {
       final numericMatch = _numericDateRegex.firstMatch(line);
@@ -268,6 +274,7 @@ class ReceiptParser {
     return null;
   }
 
+  // Find a plausible time in OCR lines.
   _ParsedTime? _extractTime(List<String> lines) {
     for (final line in lines) {
       final lower = line.toLowerCase();
@@ -349,6 +356,7 @@ class ReceiptParser {
     return null;
   }
 
+  // Combine date and time when both are available.
   DateTime _combineDateTime(DateTime? date, _ParsedTime? time) {
     final base = date ?? DateTime.now();
     if (time == null) return date ?? base;
@@ -486,9 +494,33 @@ class ReceiptParser {
     return null;
   }
 
-  double _extractTotal(List<String> lines) {
+  // Pick the most likely total amount.
+  double _extractTotal(List<String> lines, {double? tax}) {
     final candidates = _collectAmountCandidates(lines);
     if (candidates.isEmpty) return 0.0;
+
+    final filtered = tax == null
+        ? candidates
+        : candidates.where((c) => c.value > tax).toList();
+    final pool = filtered.isEmpty ? candidates : filtered;
+
+    final strong = pool.where((c) => c.isStrongTotal).toList();
+    if (strong.isNotEmpty) {
+      _sortCandidates(strong);
+      return strong.first.value;
+    }
+
+    final weak = pool.where((c) => c.isWeakTotal || c.hasAmountLabel).toList();
+    if (weak.isNotEmpty) {
+      _sortCandidates(weak);
+      return weak.first.value;
+    }
+
+    _sortCandidates(pool);
+    return pool.first.value;
+  }
+
+  void _sortCandidates(List<_AmountCandidate> candidates) {
     candidates.sort((a, b) {
       final scoreCompare = b.score.compareTo(a.score);
       if (scoreCompare != 0) return scoreCompare;
@@ -496,9 +528,9 @@ class ReceiptParser {
       if (valueCompare != 0) return valueCompare;
       return b.lineIndex.compareTo(a.lineIndex);
     });
-    return candidates.first.value;
   }
 
+  // Extract tax/VAT/GST line if present.
   double? _extractTax(List<String> lines) {
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
@@ -517,6 +549,7 @@ class ReceiptParser {
     return null;
   }
 
+  // Extract payment method keywords.
   String? _extractPaymentMethod(String text) {
     final lower = text.toLowerCase();
     for (final token in _paymentTokens) {
@@ -531,6 +564,7 @@ class ReceiptParser {
     return null;
   }
 
+  // Collect candidate amounts with heuristic scoring.
   List<_AmountCandidate> _collectAmountCandidates(List<String> lines) {
     final candidates = <_AmountCandidate>[];
     for (var i = 0; i < lines.length; i++) {
@@ -546,13 +580,16 @@ class ReceiptParser {
         continue;
       }
 
-      final lineScore = _scoreAmountLine(line, lower, keywordLine, i, lines.length);
+      final lineScore =
+          _scoreAmountLine(line, lower, keywordLine, i, lines.length);
       var amounts = _extractAmountsFromLine(line);
 
       final isStrongTotal = _totalStrongRegex.hasMatch(keywordLine) &&
           !_totalExcludeRegex.hasMatch(keywordLine);
+      final isWeakTotal = _totalWeakRegex.hasMatch(keywordLine);
       final hasAmountLabel = _amountLabelRegex.hasMatch(keywordLine);
-      final hasCurrency = _currencyLineRegex.hasMatch(keywordLine);
+      final hasCurrency =
+          _currencyLineRegex.hasMatch(keywordLine) || _containsCurrencySymbol(line);
       final looksLikePhone = _lineLooksLikePhoneNumber(line);
 
       if (looksLikePhone && !isStrongTotal && !hasAmountLabel && !hasCurrency) {
@@ -575,6 +612,10 @@ class ReceiptParser {
             value: value,
             lineIndex: i + 1,
             score: lineScore + boost,
+            isStrongTotal: isStrongTotal,
+            isWeakTotal: isWeakTotal,
+            hasAmountLabel: hasAmountLabel,
+            hasCurrency: hasCurrency,
           ));
         }
         continue;
@@ -591,8 +632,13 @@ class ReceiptParser {
           lineIndex: i,
           score: lineScore +
               (isStrongTotal ? 30 : 0) +
+              (isWeakTotal ? 12 : 0) +
               (hasAmountLabel ? 8 : 0) +
-              (hasCurrency ? 6 : 0),
+              (hasCurrency ? 8 : 0),
+          isStrongTotal: isStrongTotal,
+          isWeakTotal: isWeakTotal,
+          hasAmountLabel: hasAmountLabel,
+          hasCurrency: hasCurrency,
         ));
       }
     }
@@ -600,6 +646,7 @@ class ReceiptParser {
     return candidates;
   }
 
+  // Score a line based on total/tax keywords and position.
   int _scoreAmountLine(
     String line,
     String lower,
@@ -620,10 +667,18 @@ class ReceiptParser {
 
     if (totalLines > 1) {
       final position = index / (totalLines - 1);
-      score += (position * 10).round();
+      score += (position * 16).round();
     }
 
     return score;
+  }
+
+  bool _containsCurrencySymbol(String line) {
+    return line.contains(r'$') ||
+        line.contains('\u20AC') ||
+        line.contains('\u00A3') ||
+        line.contains('\u20B9') ||
+        line.contains('\u20A8');
   }
 
   bool _lineLooksLikeDateOnly(String line, String lower) {
@@ -641,6 +696,7 @@ class ReceiptParser {
     return false;
   }
 
+  // Extract numeric amounts from a single OCR line.
   List<double> _extractAmountsFromLine(String line) {
     final sanitized = line.replaceAll('\u00A0', ' ');
     final matches = _amountTokenRegex.allMatches(sanitized);
@@ -662,6 +718,7 @@ class ReceiptParser {
     return false;
   }
 
+  // Parse a numeric token with comma/dot normalization.
   double? _parseAmount(String value) {
     var cleaned = value.trim();
     if (cleaned.isEmpty) return null;
@@ -697,11 +754,15 @@ class ReceiptParser {
     return normalized;
   }
 
+  // Normalize OCR text for keyword matching (O/0, I/1, etc.).
   String _normalizeForKeywords(String text) {
     return text
         .replaceAll('0', 'o')
         .replaceAll('1', 'l')
-        .replaceAll('5', 's');
+        .replaceAll('4', 'a')
+        .replaceAll('5', 's')
+        .replaceAll('7', 't')
+        .replaceAll('8', 'b');
   }
 
   String _normalizeSeparators(String token) {
@@ -748,11 +809,19 @@ class _AmountCandidate {
   final double value;
   final int lineIndex;
   final int score;
+  final bool isStrongTotal;
+  final bool isWeakTotal;
+  final bool hasAmountLabel;
+  final bool hasCurrency;
 
   const _AmountCandidate({
     required this.value,
     required this.lineIndex,
     required this.score,
+    required this.isStrongTotal,
+    required this.isWeakTotal,
+    required this.hasAmountLabel,
+    required this.hasCurrency,
   });
 }
 
@@ -767,3 +836,6 @@ class _ParsedTime {
     required this.second,
   });
 }
+
+
+

@@ -1,4 +1,5 @@
-﻿class ReceiptClassificationResult {
+/// Result of classifying receipt as income/expense.
+class ReceiptClassificationResult {
   final String type;
   final String reason;
 
@@ -8,6 +9,7 @@
   });
 }
 
+/// Keyword-based classifier for receipt type.
 class ReceiptClassifier {
   static const List<String> _incomeKeywords = [
     'salary',
@@ -42,6 +44,7 @@ class ReceiptClassifier {
     'cash withdrawal',
   ];
 
+  // Use keywords in OCR text + merchant to decide income vs expense.
   ReceiptClassificationResult classify({
     required String rawText,
     required String merchant,
@@ -90,5 +93,7 @@ class ReceiptClassifier {
     );
   }
 }
+
+
 
 

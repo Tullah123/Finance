@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../services/app_lock_service.dart';
+import '../services/data_service.dart';
+import '../services/notification_service.dart';
+import '../services/statement_pdf_service.dart';
+import '../services/theme_service.dart';
 import '../utils/layout.dart';
 import 'pin_setup_screen.dart';
 
+/// Settings screen for appearance, security, and data actions.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
@@ -13,7 +18,10 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final AppLockService _lockService = AppLockService();
+  final DataService _dataService = DataService();
+  final StatementPdfService _statementPdfService = StatementPdfService();
   bool _isLoading = true;
+  bool _isClearing = false;
   bool _lockEnabled = false;
   bool _biometricsEnabled = false;
   bool _biometricsAvailable = false;
@@ -25,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
+  // Load current lock settings and biometrics availability.
   Future<void> _loadSettings() async {
     final settings = await _lockService.loadSettings();
     final biometricsAvailable = await _lockService.isBiometricsAvailable();
@@ -38,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  // Toggle app lock with safety checks.
   Future<void> _toggleLock(bool value) async {
     if (value && !_hasPin && !_biometricsEnabled) {
       _showMessage('Enable PIN or biometrics first.');
@@ -48,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _lockEnabled = value);
   }
 
+  // Toggle biometrics and keep lock state consistent.
   Future<void> _toggleBiometrics(bool value) async {
     if (value && !_biometricsAvailable) {
       _showMessage('Biometrics are not available on this device.');
@@ -66,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _lockService.setLockEnabled(_lockEnabled);
   }
 
+  // Navigate to PIN setup and save.
   Future<void> _setPin() async {
     final pin = await Navigator.push<String>(
       context,
@@ -81,6 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  // Remove PIN after confirmation.
   Future<void> _removePin() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -119,8 +132,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // Double-confirm and erase all stored data.
+  Future<void> _confirmEraseData() async {
+    final shouldErase = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Erase all data?'),
+        content: const Text(
+          'This will delete transactions, budgets, goals, reminders, and statements. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text('Erase'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldErase != true) return;
+
+    final confirmAgain = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('This cannot be undone'),
+        content: const Text(
+          'Are you absolutely sure you want to permanently erase all data?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text('Yes, erase all'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmAgain != true) return;
+    setState(() => _isClearing = true);
+    try {
+      final reminders = await _dataService.loadReminders();
+      for (final reminder in reminders) {
+        await NotificationService.instance.cancelReminderFor(reminder);
+      }
+      await _dataService.clearAllData();
+      await _statementPdfService.deleteAllStatements();
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to erase data: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isClearing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
@@ -141,13 +231,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : ListView(
                       children: [
                         Text(
-                          'Security',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          'Appearance',
+                          style: textTheme.titleLarge,
                         ),
                         SizedBox(height: itemGap),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ValueListenableBuilder<AppThemeMode>(
+                            valueListenable: ThemeService.modeNotifier,
+                            builder: (context, mode, _) {
+                              return Column(
+                                children: [
+                                  RadioListTile<AppThemeMode>(
+                                    title: const Text('Light'),
+                                    subtitle:
+                                        const Text('Default bright theme'),
+                                    value: AppThemeMode.light,
+                                    groupValue: mode,
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      ThemeService.setMode(value);
+                                    },
+                                  ),
+                                  const Divider(height: 1),
+                                  RadioListTile<AppThemeMode>(
+                                    title: const Text('Dark'),
+                                    subtitle: const Text('Dim dark theme'),
+                                    value: AppThemeMode.dark,
+                                    groupValue: mode,
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      ThemeService.setMode(value);
+                                    },
+                                  ),
+                                  const Divider(height: 1),
+                                  RadioListTile<AppThemeMode>(
+                                    title: const Text('Black'),
+                                    subtitle: const Text('Pure black theme'),
+                                    value: AppThemeMode.black,
+                                    groupValue: mode,
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      ThemeService.setMode(value);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(height: sectionGap),
+                        Text(
+                          'Security',
+                          style: textTheme.titleLarge,
+                        ),
+                        SizedBox(height: itemGap),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
@@ -202,6 +353,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ],
                           ),
                         ),
+                        SizedBox(height: sectionGap),
+                        Text(
+                          'Data',
+                          style: textTheme.titleLarge,
+                        ),
+                        SizedBox(height: itemGap),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Erase all data',
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Deletes transactions, budgets, goals, reminders, and statements.',
+                                style: textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed:
+                                      _isClearing ? null : _confirmEraseData,
+                                  icon: _isClearing
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.delete_forever_rounded),
+                                  label: Text(
+                                    _isClearing
+                                        ? 'Erasing...'
+                                        : 'Erase Data',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
             ),
@@ -211,3 +425,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

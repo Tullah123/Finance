@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import '../utils/layout.dart';
 import 'add_reminder_screen.dart';
 
+/// Reminders screen with status sorting and quick actions.
 class RemindersScreen extends StatefulWidget {
   final List<Reminder> reminders;
   final VoidCallback onRefresh;
@@ -32,6 +33,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     });
   }
 
+  // Sort reminders by status and expiry time.
   List<Reminder> get _sortedReminders {
     final nowUtc = DateTime.now().toUtc();
     final items = List<Reminder>.from(widget.reminders);
@@ -61,6 +63,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     }
   }
 
+  // Sync scheduled notifications with current reminders.
   Future<void> _syncNotifications() async {
     for (final reminder in widget.reminders) {
       await NotificationService.instance.cancelReminderFor(reminder);
@@ -75,6 +78,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     widget.onRefresh();
   }
 
+  // Navigate to add reminder form.
   void _addReminder() {
     Navigator.push(
       context,
@@ -91,6 +95,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
+  // Open edit form for a reminder.
   void _editReminder(Reminder reminder) {
     Navigator.push(
       context,
@@ -117,6 +122,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
+  // Enable/disable reminder and notifications.
   Future<void> _toggleEnabled(Reminder reminder, bool value) async {
     setState(() {
       reminder.isEnabled = value;
@@ -129,6 +135,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     }
   }
 
+  // Mark reminder as completed/active.
   Future<void> _toggleCompleted(Reminder reminder) async {
     setState(() {
       if (reminder.isCompleted) {
@@ -147,20 +154,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
     }
   }
 
+  // Delete reminder and cancel notifications.
   Future<void> _deleteReminder(Reminder reminder) async {
     widget.reminders.removeWhere((r) => r.id == reminder.id);
     await _saveReminders();
     await NotificationService.instance.cancelReminderFor(reminder);
   }
 
+  // Bottom sheet with reminder actions.
   void _showActions(Reminder reminder) {
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -261,6 +271,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final hPad = AppLayout.horizontalPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
@@ -281,7 +295,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     vertical: sectionGap,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colorScheme.surface,
                     borderRadius:
                         BorderRadius.vertical(bottom: Radius.circular(30)),
                     boxShadow: [
@@ -297,20 +311,15 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       Expanded(
                         child: Text(
                           'Reminders',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                          style: textTheme.titleLarge,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         '${_sortedReminders.length}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: mutedText,
                         ),
                       ),
                     ],
@@ -349,6 +358,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   Widget _buildEmptyState(double sectionGap) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -356,30 +369,25 @@ class _RemindersScreenState extends State<RemindersScreen> {
           Container(
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B998B).withOpacity(0.1),
+              color: colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.alarm_rounded,
               size: 72,
-              color: Color(0xFF1B998B),
+              color: colorScheme.primary,
             ),
           ),
           SizedBox(height: sectionGap),
-          const Text(
+          Text(
             'No reminders yet',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
             'Create a reminder to stay on track',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: textTheme.bodyMedium?.copyWith(
+              color: mutedText,
             ),
           ),
         ],
@@ -392,6 +400,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
     DateTime nowUtc,
     double itemGap,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final mutedText =
+        textTheme.bodySmall?.color ?? colorScheme.onSurface.withOpacity(0.6);
     final status = reminder.status(nowUtc);
     final statusLabel = _statusLabel(status);
     final statusColor = _statusColor(status);
@@ -401,7 +413,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -446,7 +458,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 reminder.notes!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: mutedText),
               ),
           ],
         ),
@@ -523,7 +535,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
         return Colors.grey;
       case ReminderStatus.upcoming:
       default:
-        return const Color(0xFF1B998B);
+        return Theme.of(context).colorScheme.primary;
     }
   }
 }
+

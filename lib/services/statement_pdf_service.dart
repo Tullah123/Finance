@@ -8,7 +8,9 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../models/transaction.dart';
 
+/// Generates PDF statements and manages saved statement files.
 class StatementPdfService {
+  // Generate a PDF statement for a selected period.
   Future<File> generateStatement({
     required List<Transaction> transactions,
     required String periodLabel,
@@ -20,6 +22,7 @@ class StatementPdfService {
     final currency = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 2);
     final dateFormat = DateFormat('yyyy-MM-dd');
 
+    // Compute summary totals for the statement header.
     final income = transactions
         .where((t) => t.type == 'income')
         .fold(0.0, (sum, t) => sum + t.amount);
@@ -28,9 +31,11 @@ class StatementPdfService {
         .fold(0.0, (sum, t) => sum + t.amount);
     final balance = income - expense;
 
+    // Sort transactions by date for the table.
     final sorted = List<Transaction>.from(transactions)
       ..sort((a, b) => a.date.compareTo(b.date));
 
+    // Build the PDF document with summary and transaction table.
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -118,6 +123,7 @@ class StatementPdfService {
       ),
     );
 
+    // Write the PDF file to the app documents/ statements folder.
     final directory = await getApplicationDocumentsDirectory();
     final statementsDir =
         Directory(path.join(directory.path, 'statements'));
@@ -131,6 +137,7 @@ class StatementPdfService {
     return file;
   }
 
+  // Summary widget for header totals.
   pw.Widget _summaryCell(String label, String value) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
@@ -160,4 +167,15 @@ class StatementPdfService {
       ),
     );
   }
+
+  // Delete all saved statement PDFs.
+  Future<void> deleteAllStatements() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final statementsDir =
+        Directory(path.join(directory.path, 'statements'));
+    if (await statementsDir.exists()) {
+      await statementsDir.delete(recursive: true);
+    }
+  }
 }
+

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../services/data_service.dart';
@@ -7,6 +7,7 @@ import '../utils/layout.dart';
 import 'add_transaction_screen.dart';
 import 'receipt_scanner_screen.dart';
 
+/// Transactions list with filters, sorting, and details.
 class TransactionsScreen extends StatefulWidget {
   final List<Transaction> transactions;
   final VoidCallback onRefresh;
@@ -30,6 +31,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   late TabController _tabController;
 
   @override
+  // Setup tab controller for All/Income/Expense.
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
@@ -41,6 +43,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     super.dispose();
   }
 
+  // Apply type filter and sorting.
   List<Transaction> get _filteredTransactions {
     var filtered = widget.transactions;
 
@@ -75,6 +78,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     final tomorrowStart = todayStart.add(const Duration(days: 1));
     final yesterdayStart = todayStart.subtract(const Duration(days: 1));
 
+    // Split transactions into date buckets.
     final todayTransactions = _filteredTransactions.where((t) {
       return !t.date.isBefore(todayStart) && t.date.isBefore(tomorrowStart);
     }).toList();
@@ -99,7 +103,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Column(
               children: [
-                // Header
+                // Header + filters
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: hPad,
@@ -177,7 +181,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   ),
                 ),
 
-                // Transaction List
+                // Transaction list content
                 Expanded(
                   child: _filteredTransactions.isEmpty
                       ? Center(
@@ -299,10 +303,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   Widget _buildTransactionCard(Transaction transaction) {
     final itemGap = AppLayout.itemGap(context);
     final cardPad = AppLayout.cardPadding(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: EdgeInsets.only(bottom: itemGap),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -387,16 +392,18 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
+  // Bottom sheet for sort options.
   void _showSortOptions() {
     final cardPad = AppLayout.cardPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: EdgeInsets.all(cardPad),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
         child: Column(
@@ -456,16 +463,18 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
+  // Bottom sheet for type filters.
   void _showFilterOptions() {
     final cardPad = AppLayout.cardPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: EdgeInsets.all(cardPad),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
         child: Column(
@@ -533,10 +542,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
+  // Bottom sheet with transaction details and actions.
   void _showTransactionDetails(Transaction transaction) {
     final cardPad = AppLayout.cardPadding(context);
     final sectionGap = AppLayout.sectionGap(context);
     final itemGap = AppLayout.itemGap(context);
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -544,7 +555,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
         child: Column(
@@ -565,7 +576,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
+                    // Header + filters
                     Row(
                       children: [
                         Container(
@@ -712,11 +723,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   Widget _buildDetailItem(String label, String value, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F7F8),
+        color: colorScheme.background,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -724,10 +737,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFF1B998B)),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -736,18 +749,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 15,
+                  style: textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
                   ),
                 ),
               ],
@@ -758,15 +768,17 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
+  // Entry point for manual or scan flows.
   void _addTransaction(BuildContext context) {
     final parentContext = context;
+    final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
         child: Column(
@@ -782,7 +794,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: Icon(Icons.edit_rounded, color: const Color(0xFF1B998B)),
+              leading: Icon(
+                Icons.edit_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: Text('Manual Entry'),
               onTap: () {
                 Navigator.pop(context);
@@ -804,7 +819,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             ListTile(
               leading: Icon(Icons.receipt_long_rounded,
-                  color: const Color(0xFF1B998B)),
+                  color: Theme.of(context).colorScheme.primary),
               title: Text('Scan Receipt'),
               onTap: () {
                 Navigator.pop(context);
@@ -894,3 +909,4 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 }
+

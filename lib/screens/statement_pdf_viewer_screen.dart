@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf_render/pdf_render.dart';
 import 'package:pdf_render/pdf_render_widgets.dart';
 
+/// PDF viewer for generated statements.
 class StatementPdfViewerScreen extends StatelessWidget {
   final String filePath;
   final String title;
@@ -22,3 +23,4 @@ class StatementPdfViewerScreen extends StatelessWidget {
     );
   }
 }
+

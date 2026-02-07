@@ -1,3 +1,4 @@
+/// UI-friendly status bucket for reminders.
 enum ReminderStatus {
   upcoming,
   nearExpiry,
@@ -6,6 +7,7 @@ enum ReminderStatus {
   disabled,
 }
 
+/// Reminder model used for scheduling local notifications.
 class Reminder {
   String id;
   String title;
@@ -35,6 +37,7 @@ class Reminder {
     required this.timeZone,
   });
 
+  // Compute status based on current UTC time.
   ReminderStatus status(DateTime nowUtc) {
     if (isCompleted) return ReminderStatus.completed;
     if (!isEnabled) return ReminderStatus.disabled;
@@ -49,6 +52,7 @@ class Reminder {
     return ReminderStatus.upcoming;
   }
 
+  // Serialize for local storage.
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -64,6 +68,7 @@ class Reminder {
         'timeZone': timeZone,
       };
 
+  // Deserialize from local storage.
   factory Reminder.fromJson(Map<String, dynamic> json) {
     final extra = (json['extraAlerts'] as List<dynamic>?)
             ?.map((value) => DateTime.parse(value).toUtc())
@@ -85,3 +90,4 @@ class Reminder {
     );
   }
 }
+

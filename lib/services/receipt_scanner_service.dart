@@ -1,4 +1,5 @@
-﻿import 'dart:io';
+import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
@@ -12,17 +13,19 @@ import '../models/receipt_scan_result.dart';
 import 'receipt_classifier.dart';
 import 'receipt_parser.dart';
 
+/// Handles receipt capture, OCR, parsing, and classification.
 class ReceiptScannerService {
   final TextRecognizer _textRecognizer = TextRecognizer();
   final ImagePicker _picker = ImagePicker();
   final ReceiptParser _parser = ReceiptParser();
   final ReceiptClassifier _classifier = ReceiptClassifier();
 
+  // Capture an image from camera and run OCR pipeline.
   Future<ReceiptScanResult?> scanReceiptFromCamera() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
+        imageQuality: 100,
         preferredCameraDevice: CameraDevice.rear,
       );
       if (image == null) return null;
@@ -41,11 +44,12 @@ class ReceiptScannerService {
     }
   }
 
+  // Pick image from gallery and run OCR pipeline.
   Future<ReceiptScanResult?> scanReceiptFromGallery() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
+        imageQuality: 100,
       );
       if (image == null) return null;
       return await _processImage(File(image.path), source: 'gallery');
@@ -63,6 +67,7 @@ class ReceiptScannerService {
     }
   }
 
+  // Pick a PDF, render first page, then run OCR pipeline.
   Future<ReceiptScanResult?> scanReceiptFromPdf() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -105,6 +110,7 @@ class ReceiptScannerService {
     }
   }
 
+  // Core OCR + parse/classify flow for a single image.
   Future<ReceiptScanResult> _processImage(
     File imageFile, {
     required String source,
@@ -179,15 +185,26 @@ class ReceiptScannerService {
     }
   }
 
+  // Render the first PDF page to an image for OCR.
   Future<File?> _renderPdfFirstPage(File pdfFile) async {
     PdfDocument? document;
     PdfPageImage? pageImage;
     try {
       document = await PdfDocument.openFile(pdfFile.path);
       final page = await document.getPage(1);
+      const scale = 2.0;
+      var targetWidth = (page.width * scale).round();
+      var targetHeight = (page.height * scale).round();
+      const maxDim = 2400;
+      final maxCurrent = math.max(targetWidth, targetHeight);
+      if (maxCurrent > maxDim) {
+        final ratio = maxDim / maxCurrent;
+        targetWidth = (targetWidth * ratio).round();
+        targetHeight = (targetHeight * ratio).round();
+      }
       pageImage = await page.render(
-        width: page.width.toInt(),
-        height: page.height.toInt(),
+        width: targetWidth,
+        height: targetHeight,
       );
 
       final ui.Image image = await pageImage.createImageIfNotAvailable();
@@ -221,6 +238,7 @@ class ReceiptScannerService {
     }
   }
 
+  // Normalize OCR output into a consistent top-to-bottom order.
   String _normalizeRecognizedText(RecognizedText recognizedText) {
     final lines = <_OcrLine>[];
     for (final block in recognizedText.blocks) {
@@ -242,13 +260,21 @@ class ReceiptScannerService {
       return a.left.compareTo(b.left);
     });
 
-    return lines.map((line) => line.text).join('\n').trim();
+    final sortedText = lines.map((line) => line.text).join('\n').trim();
+    final rawText = recognizedText.text.trim();
+    if (rawText.isEmpty) return sortedText;
+    if (sortedText.length < rawText.length * 0.7) {
+      return rawText;
+    }
+    return sortedText;
   }
 
+  // Clean up OCR resources.
   void dispose() {
     _textRecognizer.close();
   }
 
+  // Lightweight debug logging for scan flow.
   void _log(String event, Map<String, Object?> data) {
     final payload = data.entries
         .map((entry) => '${entry.key}=${entry.value}')
@@ -270,5 +296,8 @@ class _OcrLine {
     required this.left,
   });
 }
+
+
+
 
 

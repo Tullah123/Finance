@@ -1,4 +1,5 @@
-﻿class Goal {
+/// Goal model for savings targets and progress tracking.
+class Goal {
   String id;
   String title;
   double targetAmount;
@@ -18,6 +19,7 @@
   double get progress =>
       targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
 
+  // Serialize for local storage.
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -27,6 +29,7 @@
         'description': description,
       };
 
+  // Deserialize from local storage.
   factory Goal.fromJson(Map<String, dynamic> json) => Goal(
         id: json['id'],
         title: json['title'],
@@ -36,5 +39,6 @@
         description: json['description'],
       );
 }
+
 
 

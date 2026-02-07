@@ -1,4 +1,5 @@
-﻿class Transaction {
+/// Transaction model for income/expense records.
+class Transaction {
   String id;
   String title;
   double amount;
@@ -35,6 +36,7 @@
     this.classificationReason,
   });
 
+  // Serialize for local storage.
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -54,6 +56,7 @@
         'classificationReason': classificationReason,
       };
 
+  // Deserialize from local storage.
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
       id: json['id'],
       title: json['title'],
@@ -72,5 +75,6 @@
       rawText: json['rawText'],
       classificationReason: json['classificationReason']);
 }
+
 
 
